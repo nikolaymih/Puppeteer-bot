@@ -1,4 +1,4 @@
 **/node_modules
 dist/
 **/**/*.log
-./google-chrome-stable_current_amd64.deb
+git rm --cached google-chrome-stable_current_amd64.deb
