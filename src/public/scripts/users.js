@@ -25,6 +25,7 @@ function toggleContent() {
 
 function addRequiredAttributesToPerson(isPersonChecked = false) {
   const firstName = document.getElementById('firstName');
+  const middleName = document.getElementById('middleName');
   const lastName = document.getElementById('lastName');
   const securityNumber = document.getElementById('securityNumber');
   const documentNumber = document.getElementById('documentNumber');
@@ -32,9 +33,11 @@ function addRequiredAttributesToPerson(isPersonChecked = false) {
   const issuer = document.getElementById('issuer');
 
   const bullstat = document.getElementById('bullstat');
+  const powerAttorney = document.getElementById('powerAttorney');
 
   if (isPersonChecked) {
     firstName.setAttribute('required', 'required');
+    middleName.setAttribute('required', 'required');
     lastName.setAttribute('required', 'required');
     securityNumber.setAttribute('required', 'required');
     documentNumber.setAttribute('required', 'required');
@@ -42,10 +45,13 @@ function addRequiredAttributesToPerson(isPersonChecked = false) {
     issuer.setAttribute('required', 'required');
 
     bullstat.removeAttribute('required');
+    powerAttorney.removeAttribute('required');
   } else {
     bullstat.setAttribute('required', 'required');
+    powerAttorney.setAttribute('required', 'required');
 
     firstName.removeAttribute('required');
+    middleName.removeAttribute('required');
     lastName.removeAttribute('required');
     securityNumber.removeAttribute('required');
     documentNumber.removeAttribute('required');
@@ -74,6 +80,7 @@ function displayUsers() {
       allEntriesAnchor.innerHTML = template({
         entries: resp.map(entry => ({
           ...entry,
+          powerAttorney: entry.powerAttorney || '-',
           createdFormatted: entry.startDay,
         })),
       });
@@ -82,6 +89,7 @@ function displayUsers() {
 
 const form = document.getElementById('submit-form');
 form.addEventListener('submit', handleForSubmission);
+form.addEventListener("submit", clearFormAfterSubmission);
 
 function handleForSubmission(event) {
   event.preventDefault();
@@ -91,6 +99,7 @@ function handleForSubmission(event) {
   const formData = new FormData();
   formData.append('representative', entries.representative);
   formData.append('firstName', entries.firstName);
+  formData.append('middleName', entries.middleName);
   formData.append('lastName', entries.lastName);
   formData.append('securityNumber', entries.securityNumber.toString()); // Convert numbers to strings
   formData.append('documentNumber', entries.documentNumber.toString());
@@ -105,6 +114,10 @@ function handleForSubmission(event) {
   Http
     .post('/api/entries/add', formData)
     .then(data => displayUsers());
+}
+
+function clearFormAfterSubmission() {
+  form.reset();
 }
 
 // Setup event listener for button click
@@ -178,7 +191,7 @@ function submitEdit(ele) {
   var emailInput = userEle.getElementsByClassName('email-edit-input')[0];
   var id = ele.getAttribute('data-user-id');
   var created = ele.getAttribute('data-user-created');
-  console.log(ele, created);
+
   var data = {
     user: {
       id: Number(id),

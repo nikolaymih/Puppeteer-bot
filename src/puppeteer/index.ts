@@ -1,53 +1,87 @@
-import puppeteer from 'puppeteer';
-import {handelStepFive, handleStepFour, handleStepOneCompany, handleStepThree, handleStepTwo} from '@src/puppeteer/steps';
+import puppeteer, {Page} from 'puppeteer';
+import pathLib from 'path';
+import {handleStepFour, handleStepThree, handleStepOnePerson, handleStepOneCompany, handleStepTwo, handleStepFive, kepLogin} from '@src/puppeteer/steps';
+import {IEntry} from '@src/models/Entry';
+import {goToLink, RepresentativeValues} from '@src/common/misc';
+import ExecutorService from '@src/services/ExecutorService';
+import fs from 'fs-extra';
 
-export async function mainPuppeteer() {
-  const browser = await puppeteer.launch({
-    headless: false,
-    args: [
-      '--start-maximized',
-    ],
-    defaultViewport: null,
-  });
-  const page = await browser.newPage();
+export async function mainPuppeteer(entry: IEntry) {
+  const screenshotPaths: string[] = [];
 
-  await page.goto('https://login-e-uslugi.mvr.bg/Account/Login', {});
+  try {
+    const browser = await puppeteer.launch({
+      headless: false,
+      args: [
+        '--start-maximized',
+      ],
+      defaultViewport: null,
+    });
 
-  page.setDefaultNavigationTimeout(0);
+    const page = await browser.newPage();
 
-  const targetEls = await page.$$('body > div.layout-wrapper > main > div.main-wrapper.section-wrapper.section-wrapper--margins.fixed-content-width > div.page-wrapper > div > div > div:nth-child(3) > section:nth-child(1) > a > div > div > div > h3');
-  for (const target of targetEls) {
-    const iHtml = await page.evaluate(el => el.innerHTML, target);
-    if (iHtml.trim() === 'Вход с КЕП') {
-      await target.click();
+    await page.goto(goToLink, {});
 
-      await page.waitForNavigation({waitUntil: 'networkidle0'});
+    page.setDefaultNavigationTimeout(0);
 
-      await page.goto('https://e-uslugi.mvr.bg/services/applicationProcesses/371');
+    await kepLogin(page);
 
-      break;
+    await page.waitForSelector('#ARTICLE-CONTENT > div.alert.alert-info > button');
+
+    await page.locator('#COOKIE_ACCEPT').click();
+
+    await page.locator('#ARTICLE-CONTENT > div.alert.alert-info > button').click();
+
+    entry.representative === RepresentativeValues.PERSONAL
+      ? await handleStepOnePerson(page, entry, screenshotPaths)
+      : await handleStepOneCompany(page, entry, screenshotPaths);
+
+    await handleStepTwo(page, entry.id, screenshotPaths);
+
+    await handleStepThree(page, entry.id, screenshotPaths);
+
+    await handleStepFour(page, entry, screenshotPaths);
+
+    await handleStepFive(page, entry, screenshotPaths);
+
+    await initiateScreenShot(page, screenshotPaths, `${entry.id}/mvr-step6.jpeg`);
+
+    await ExecutorService.createExecutor({
+      id: entry.id,
+      screenshotPaths,
+      entryId: entry.id,
+      isSuccessful: true,
+      errorMessage: '',
+    });
+
+  } catch (error) {
+    if (error instanceof Error) {
+      await ExecutorService.createExecutor({
+        id: entry.id,
+        screenshotPaths,
+        entryId: entry.id,
+        isSuccessful: false,
+        errorMessage: error.message,
+      });
     }
   }
+}
 
-  await page.waitForSelector('#ARTICLE-CONTENT > div.alert.alert-info > button');
+export async function initiateScreenShot(page: Page, screenshotPaths: string[], path: string) {
+  const screenshotDir = pathLib.join('./src/screenshots', path.split('/')[0]);
 
-  await page.locator('#COOKIE_ACCEPT').click();
+  try {
+    await fs.access(screenshotDir);
+  } catch (e) {
+    await fs.mkdir(screenshotDir, {recursive: true});
+  }
 
-  await page.locator('#ARTICLE-CONTENT > div.alert.alert-info > button').click();
+  await makeScreenshot(page, path);
+  screenshotPaths.push(path);
+}
 
-  await handleStepOneCompany(page);
-
-  await handleStepThree(page);
-
-  await handleStepFour(page);
-
-  await handelStepFive(page);
-
-  await handleStepTwo(page);
-
-  await page.waitForSelector('#ARTICLE-CONTENT > div > h2');
-
-  await page?.screenshot({
-    path: 'mvr.jpeg',
+async function makeScreenshot(page: Page, path: string) {
+  await page.screenshot({
+    path: `./src/screenshots/${path}`,
   });
 }

@@ -8,7 +8,7 @@
 import path from 'path';
 import dotenv from 'dotenv';
 import { parse } from 'ts-command-line-args';
-
+import EntryService from '@src/services/EntryService';
 
 // **** Types **** //
 
@@ -27,6 +27,10 @@ const args = parse<IArgs>({
     alias: 'e',
   },
 });
+
+(async () => {
+  await EntryService.rescheduleEvents();
+})();
 
 // Set the env file
 const result2 = dotenv.config({

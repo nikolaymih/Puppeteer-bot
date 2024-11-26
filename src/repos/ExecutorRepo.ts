@@ -20,6 +20,14 @@ async function getAllExecutors(): Promise<ICompleteLogger[]> {
   return completeLogger;
 }
 
+async function createExecutor(executor: ICompleteLogger): Promise<void> {
+  const db = await orm.openDb();
+  db.executors.push(executor);
+
+  return orm.saveDb(db);
+}
+
 export default {
   getAllExecutors,
+  createExecutor
 } as const;

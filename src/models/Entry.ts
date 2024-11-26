@@ -2,6 +2,7 @@ export interface IEntry {
   id: string,
   representative: string,
   firstName: string,
+  middleName: string,
   lastName: string,
   securityNumber: string,
   documentNumber: string,

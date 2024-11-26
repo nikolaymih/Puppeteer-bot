@@ -18,7 +18,7 @@ import EnvVars from '@src/common/EnvVars';
 import HttpStatusCodes from '@src/common/HttpStatusCodes';
 import RouteError from '@src/common/RouteError';
 import {NodeEnvs} from '@src/common/misc';
-import {handelStepFive, handleStepFour, handleStepOneCompany, handleStepThree, handleStepTwo} from '@src/puppeteer/steps';
+import {handleStepFour, handleStepThree, handleStepOneCompany, handleStepTwo, handleStepFive} from '@src/puppeteer/steps';
 import {mainPuppeteer} from '@src/puppeteer';
 
 // **** Variables **** //
@@ -76,7 +76,24 @@ app.use(express.static(staticDir));
 
 // Nav to users pg by default
 app.get('/', async (_: Request, res: Response) => {
-  await mainPuppeteer();
+  const entry = {
+    id: '1',
+    representative: 'Юридическо лице',
+    firstName: 'test',
+    middleName: 'test',
+    lastName: 'test',
+    securityNumber: 'test',
+    documentNumber: 'test',
+    issuedOn: '15-05-2016',
+    issuer: 'МВР ВАРНА',
+    bullstat: '231321',
+    regNumber: 'B9699НТ',
+    startDay: '2024-11-24 18:02:30',
+    purchaseDoc: 'test',
+    powerAttorney: 'test2'
+  };
+
+  await mainPuppeteer(entry);
 
   res.status(200).status(200).send('Тоз изпълнение брат!');
 });
