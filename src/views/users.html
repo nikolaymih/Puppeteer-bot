@@ -267,6 +267,56 @@
             {{/each}}
     </script>
 </div>
+
+<div>
+    <h4 class="column-header mt-4">
+        Последни 20 записа
+    </h4>
+
+    <div id="all-executors-anchor"></div>
+
+    <script
+            id="all-еxecutors-template"
+            type="text/x-handlebars-template"
+    >
+        {{#each executors}}
+            <div class="еxecutors-display-ele mt-3">
+                <div class="normal-view">
+                    <div><b>Състояние:</b> {{isSuccessful}}</div>
+                    <div><b>Грешка:</b> {{errorMessage}}</div>
+                    <div><b>Релативен път към снимки:</b> {{screenshotPaths}}</div>
+                    <div><b>Тип на заявителя:</b> {{representative}}</div>
+                    <div><b>Регистрационен номер:</b> {{regNumber}}</div>
+
+                    {{#equals representative "Физическо лице"}}
+                        <div><b>Име:</b> {{firstName}}</div>
+                        <div><b>Презиме:</b> {{middleName}}</div>
+                        <div><b>Фамилия:</b> {{lastName}}</div>
+                        <div><b>ЕГН:</b> {{securityNumber}}</div>
+                        <div><b>Лична карта №:</b> {{documentNumber}}</div>
+                        <div><b>Издаден на:</b> {{issuedOn}}</div>
+                        <div><b>Издаден oт:</b> {{issuer}}</div>
+                    {{else}}
+                        <div><b>Булстат:</b> {{bullstat}}</div>
+                    {{/equals}}
+
+                    <div><b>Име на документ за придобиване:</b> {{purchaseDoc}}</div>
+                    <div><b>Име на документ за пълномощно:</b> {{powerAttorney}}</div>
+                    <div><b>Дата на стартиране:</b> {{startDay}}</div>
+                </div>
+            </div>
+        {{/each}}
+    </script>
+
+    <button
+            id="add-logs-btn"
+            class="btn btn-success mt-2"
+            onclick="showOldEntries()"
+    >
+        Покажи
+    </button>
+
+</div>
 </body>
 
 <script src="scripts/http.js"></script>

@@ -19,7 +19,7 @@ export async function kepLogin(page: Page) {
   }
 }
 
-export async function handleStepOnePerson(page: Page, entry: IEntry, screenshotPaths: string[]) {
+export async function handleStepOnePerson(page: Page, entry: IEntry, screenshotPath: string[]) {
   // Стъпка 1.
   // Натисни бутона упълномощител
   await page.locator('#ARTICLE-CONTENT > div > fieldset:nth-child(3) > div > div > div:nth-child(2) > input').click();
@@ -35,13 +35,13 @@ export async function handleStepOnePerson(page: Page, entry: IEntry, screenshotP
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identitityIssueDate').fill(entry.issuedOn);
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identityIssuer').fill(entry.issuer);
 
-  await initiateScreenShot(page, screenshotPaths, `${entry.id}/mvr-step1.jpeg`);
+  await initiateScreenShot(page, `${entry.id}/mvr-step1.jpeg`, screenshotPath);
 
   // Продължи към стъпка 3
   await page.locator('#PAGE-NAV > nav > ul > li:nth-child(3) > div.nav-item-title > button').click();
 }
 
-export async function handleStepOneCompany(page: Page, entry: IEntry, screenshotPaths: string[]) {
+export async function handleStepOneCompany(page: Page, entry: IEntry, screenshotPath: string[]) {
   // Стъпка 1.
   // Натисни бутона юридическо лице
   await page.locator('#ARTICLE-CONTENT > div > fieldset:nth-child(3) > div > div > div:nth-child(3) > input').click();
@@ -52,7 +52,7 @@ export async function handleStepOneCompany(page: Page, entry: IEntry, screenshot
   // Натисни бутона извличване на данни
   await page.locator('#ARTICLE-CONTENT > div > fieldset:nth-child(4) > div > div.form-group.col-auto > button').click();
 
-  await initiateScreenShot(page, screenshotPaths, `${entry.id}/mvr-step1.jpeg`);
+  await initiateScreenShot(page, `${entry.id}/mvr-step1.jpeg`, screenshotPath);
 
   // Продължи към стъпка 3
   setTimeout(async () => {
@@ -60,19 +60,19 @@ export async function handleStepOneCompany(page: Page, entry: IEntry, screenshot
   }, 1000);
 }
 
-export async function handleStepTwo(page: Page, id: string, screenshotPaths: string[]) {
+export async function handleStepTwo(page: Page, id: string) {
   // Премини от стъпка 3 към 4
   // eslint-disable-next-line no-console
   await page.waitForSelector('#ARTICLE-CONTENT > div > fieldset:nth-child(2) > div > div > p');
 
   setTimeout(async () => {
     await page.locator('#PAGE-NAV > nav > ul > li:nth-child(4) > div.nav-item-title > button').click();
-    await initiateScreenShot(page, screenshotPaths, `${id}/mvr-step2.jpeg`);
+    await initiateScreenShot(page, `${id}/mvr-step2.jpeg`);
     await page.locator('#PAGE-NAV > nav > ul > li:nth-child(4) > div.nav-item-title > button').click();
   }, 1000);
 }
 
-export async function handleStepThree(page: Page, id: string, screenshotPaths: string[]) {
+export async function handleStepThree(page: Page, id: string) {
   await page.waitForSelector('input[type="checkbox"]');
   const checkboxes = await page.$$('input[type="checkbox"]');
 
@@ -92,13 +92,13 @@ export async function handleStepThree(page: Page, id: string, screenshotPaths: s
     return checkboxes.length > 0 && checkboxes.every(input => (input as HTMLInputElement).checked);
   });
 
-  await initiateScreenShot(page, screenshotPaths, `${id}/mvr-step3.jpeg`);
+  await initiateScreenShot(page, `${id}/mvr-step3.jpeg`);
 
   // Proceed to click the next button
   await page.locator('#PAGE-NAV > nav > ul > li:nth-child(5) > div.nav-item-title > button').click();
 }
 
-export async function handleStepFour(page: Page, entry: IEntry, screenshotPaths: string[]) {
+export async function handleStepFour(page: Page, entry: IEntry) {
   // Прикачване на файл за придобиване
   // Step 1: Click on the desired option by its text or data-key
 
@@ -122,7 +122,7 @@ export async function handleStepFour(page: Page, entry: IEntry, screenshotPaths:
 
     await page.waitForSelector('.ui-icon.ui-icon-download-color.mr-1');
 
-    await initiateScreenShot(page, screenshotPaths, `${entry.id}/mvr-step41.jpeg`);
+    await initiateScreenShot(page, `${entry.id}/mvr-step41.jpeg`);
   }
   // Прикачване на файл с пълномощно
   // Step 1: Click on the desired option by its text or data-key
@@ -149,14 +149,14 @@ export async function handleStepFour(page: Page, entry: IEntry, screenshotPaths:
       return elements.length >= 2;
     });
 
-    await initiateScreenShot(page, screenshotPaths, `${entry.id}/mvr-step42.jpeg`);
+    await initiateScreenShot(page, `${entry.id}/mvr-step42.jpeg`);
   }
 
   // Отиди на втора стъпка
   await page.locator('#PAGE-NAV > nav > ul > li:nth-child(2) > div.nav-item-title > button').click();
 }
 
-export async function handleStepFive(page: Page, entry: IEntry, screenshotPaths: string[]) {
+export async function handleStepFive(page: Page, entry: IEntry) {
   // Стъпка 2.
   // Избери регион за който се отнася регистрацията
   await page.waitForSelector('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode');
@@ -164,7 +164,7 @@ export async function handleStepFive(page: Page, entry: IEntry, screenshotPaths:
 
   await page.select('#circumstances_aiskatVehicleTypeCode', '8403');
 
-  await initiateScreenShot(page, screenshotPaths, `${entry.id}/mvr-step51.jpeg`);
+  await initiateScreenShot(page, `${entry.id}/mvr-step51.jpeg`);
 
   // Избери отваряне на модал за селектиране на регистрационен номер
   await page.locator('#ARTICLE-CONTENT > div > fieldset:nth-child(4) > div.row > div > div > div.form-group.col-auto > button').click();
@@ -179,7 +179,7 @@ export async function handleStepFive(page: Page, entry: IEntry, screenshotPaths:
   // Изчакай за намерени резултати
   await page.waitForSelector('body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-body > fieldset > legend');
 
-  await initiateScreenShot(page, screenshotPaths, `${entry.id}/mvr-step52.jpeg`);
+  await initiateScreenShot(page, `${entry.id}/mvr-step52.jpeg`);
 
   // При намерен резултат, затвори модала
   await page.locator('body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-footer > div > div.right-side > button').click();

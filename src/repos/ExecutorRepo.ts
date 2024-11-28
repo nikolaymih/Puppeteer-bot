@@ -5,7 +5,7 @@ async function getAllExecutors(): Promise<ICompleteLogger[]> {
   const db = await orm.openDb();
   const completeLogger: ICompleteLogger[] = [];
 
-  const lastTwentyExecutors = db.executors.slice(-20);
+  const lastTwentyExecutors = db.executors.slice(-20).reverse();
   lastTwentyExecutors.forEach(executor => {
     const entry = db.entries.find(entry => entry.id === executor.entryId);
 

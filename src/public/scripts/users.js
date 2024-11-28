@@ -62,12 +62,12 @@ function addRequiredAttributesToPerson(isPersonChecked = false) {
 
 
 // Start
-displayUsers();
+displayFutureEntries();
 
 /**
  * Call api
  */
-function displayUsers() {
+function displayFutureEntries() {
   Http
     .get('/api/entries/get-future')
     .then(resp => resp.json())
@@ -85,6 +85,31 @@ function displayUsers() {
         })),
       });
     });
+}
+
+function showOldEntries() {
+  Http
+    .get('/api/executors/all')
+    .then(resp => resp.json())
+    .then(resp => {
+      console.log(resp)
+      var allExecutorsTemplate = document.getElementById('all-еxecutors-template'),
+        allExecutorsTemplateHtml = allExecutorsTemplate.innerHTML,
+        template = Handlebars.compile(allExecutorsTemplateHtml);
+      var allExecutorsAnchor = document.getElementById('all-executors-anchor');
+      allExecutorsAnchor.innerHTML = template({
+        executors: resp.map(exec => ({
+          ...exec,
+          errorMessage: exec.errorMessage || '-',
+          isSuccessful: exec.isSuccessful ? 'Приключен успешно': 'Провален',
+          screenshotPaths: exec.screenshotPaths[0]
+        })),
+      });
+    });
+}
+
+function showExecScreenshotsFolder(screenshotPaths) {
+
 }
 
 const form = document.getElementById('submit-form');
@@ -113,7 +138,7 @@ function handleForSubmission(event) {
 
   Http
     .post('/api/entries/add', formData)
-    .then(data => displayUsers());
+    .then(data => displayFutureEntries());
 }
 
 function clearFormAfterSubmission() {
@@ -158,7 +183,7 @@ function addUser() {
     .then(() => {
       nameInput.value = '';
       emailInput.value = '';
-      displayUsers();
+      displayFutureEntries();
     });
 }
 
@@ -202,7 +227,7 @@ function submitEdit(ele) {
   };
   Http
     .put('/api/users/update', data)
-    .then(() => displayUsers());
+    .then(() => displayFutureEntries());
 }
 
 /**
@@ -212,5 +237,5 @@ function deleteEntry(ele) {
   var id = ele.getAttribute('data-user-id');
   Http
     .delete('/api/entries/delete/' + id)
-    .then(() => displayUsers());
+    .then(() => displayFutureEntries());
 }

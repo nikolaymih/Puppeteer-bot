@@ -36,15 +36,15 @@ export async function mainPuppeteer(entry: IEntry) {
       ? await handleStepOnePerson(page, entry, screenshotPaths)
       : await handleStepOneCompany(page, entry, screenshotPaths);
 
-    await handleStepTwo(page, entry.id, screenshotPaths);
+    await handleStepTwo(page, entry.id);
 
-    await handleStepThree(page, entry.id, screenshotPaths);
+    await handleStepThree(page, entry.id);
 
-    await handleStepFour(page, entry, screenshotPaths);
+    await handleStepFour(page, entry);
 
-    await handleStepFive(page, entry, screenshotPaths);
+    await handleStepFive(page, entry);
 
-    await initiateScreenShot(page, screenshotPaths, `${entry.id}/mvr-step6.jpeg`);
+    await initiateScreenShot(page,`${entry.id}/mvr-step6.jpeg`);
 
     await ExecutorService.createExecutor({
       id: entry.id,
@@ -53,6 +53,8 @@ export async function mainPuppeteer(entry: IEntry) {
       isSuccessful: true,
       errorMessage: '',
     });
+
+    console.log('Успешно завършихте поръчка за номер: ', entry.regNumber);
 
   } catch (error) {
     if (error instanceof Error) {
@@ -63,21 +65,23 @@ export async function mainPuppeteer(entry: IEntry) {
         isSuccessful: false,
         errorMessage: error.message,
       });
+
+      console.log('Неуспешно запазихте номер: ', entry.regNumber, " Моля проверете логовете на http://localhost:3000/users");
     }
   }
 }
 
-export async function initiateScreenShot(page: Page, screenshotPaths: string[], path: string) {
+export async function initiateScreenShot(page: Page, path: string, screenshotPath?: string[]) {
   const screenshotDir = pathLib.join('./src/screenshots', path.split('/')[0]);
 
   try {
     await fs.access(screenshotDir);
   } catch (e) {
     await fs.mkdir(screenshotDir, {recursive: true});
+    screenshotPath && screenshotPath.push(screenshotDir);
   }
 
   await makeScreenshot(page, path);
-  screenshotPaths.push(path);
 }
 
 async function makeScreenshot(page: Page, path: string) {
