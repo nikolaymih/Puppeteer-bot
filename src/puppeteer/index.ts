@@ -1,36 +1,89 @@
-import puppeteer, {Page} from 'puppeteer';
+import puppeteer, {Browser, Page} from 'puppeteer';
 import pathLib from 'path';
-import {handleStepFour, handleStepThree, handleStepOnePerson, handleStepOneCompany, handleStepTwo, handleStepFive, kepLogin} from '@src/puppeteer/steps';
+import {handleStepFour, handleStepThree, handleStepOnePerson, handleStepOneCompany, handleStepTwo, handleStepFive, kepLogin, handleStepSix} from '@src/puppeteer/steps';
 import {IEntry} from '@src/models/Entry';
 import {goToLink, RepresentativeValues} from '@src/common/misc';
 import ExecutorService from '@src/services/ExecutorService';
 import fs from 'fs-extra';
+import {windowManager} from 'node-window-manager';
+import EntryService from '@src/services/EntryService';
 
 export async function mainPuppeteer(entry: IEntry) {
-  const screenshotPaths: string[] = [];
+  const entriesList: IEntry[] = [entry];
 
-  try {
-    const browser = await puppeteer.launch({
+  let hasNextChild = true;
+  let currentEntry = entry;
+  while (hasNextChild) {
+    const childEntry = await EntryService.getChildByParentId(currentEntry.id);
+    if (!childEntry) {
+      hasNextChild = false;
+      continue;
+    }
+
+    entriesList.push(childEntry);
+    currentEntry = childEntry;
+  }
+
+  // Run top lvl entry + child entries
+  let page: Page | undefined;
+  for (const entry1 of entriesList) {
+    if (page) {
+      await executeEntry(entry1, page);
+      return;
+    }
+
+    const pageFromExecution = await executeEntry(entry1);
+    if (pageFromExecution) {
+      page = pageFromExecution;
+    }
+  }
+}
+
+async function executeEntry(entry: IEntry, page?: Page): Promise<Page> {
+  const screenshotPaths: string[] = [];
+  let browser: Browser | undefined;
+
+  if (!page) {
+    browser = await puppeteer.launch({
       headless: false,
+      defaultViewport: null,
       args: [
         '--start-maximized',
       ],
-      defaultViewport: null,
     });
 
-    const page = await browser.newPage();
+    page = await browser.newPage();
+  }
 
-    await page.goto(goToLink, {});
+  try {
+    if (!page || entry.parentEntryId === '1') {
+      const puppeteerPid = browser?.process()?.pid; // Get Puppeteer browser process ID
 
-    page.setDefaultNavigationTimeout(0);
+      const windows = windowManager.getWindows();
+      const puppeteerWindow = windows.find((win) => win.processId === puppeteerPid);
 
-    await kepLogin(page);
+      if (puppeteerWindow) {
+        console.log('Found Puppeteer-controlled window:', puppeteerWindow);
+        puppeteerWindow.bringToTop(); // Focus the Puppeteer browser window
+      } else {
+        console.log('Could not find Puppeteer window.');
+      }
 
-    await page.waitForSelector('#ARTICLE-CONTENT > div.alert.alert-info > button');
+      await page.goto(goToLink, {});
+      await page.mouse.click(100, 200);
 
-    await page.locator('#COOKIE_ACCEPT').click();
+      page.setDefaultNavigationTimeout(0);
 
-    await page.locator('#ARTICLE-CONTENT > div.alert.alert-info > button').click();
+      await kepLogin(page);
+
+      await page.waitForSelector('#ARTICLE-CONTENT > div.alert.alert-info > button');
+
+      await page.locator('#COOKIE_ACCEPT').click();
+
+      await page.locator('#ARTICLE-CONTENT > div.alert.alert-info > button').click();
+    }
+
+    const start = Date.now();
 
     entry.representative === RepresentativeValues.PERSONAL
       ? await handleStepOnePerson(page, entry, screenshotPaths)
@@ -44,7 +97,9 @@ export async function mainPuppeteer(entry: IEntry) {
 
     await handleStepFive(page, entry);
 
-    await initiateScreenShot(page,`${entry.id}/mvr-step6.jpeg`);
+    await handleStepSix(page);
+
+    await initiateScreenShot(page, `${entry.id}/mvr-step6.jpeg`);
 
     await ExecutorService.createExecutor({
       id: entry.id,
@@ -54,7 +109,10 @@ export async function mainPuppeteer(entry: IEntry) {
       errorMessage: '',
     });
 
-    console.log('Успешно завършихте поръчка за номер: ', entry.regNumber);
+    const end = Date.now();
+    const result = end - start;
+    console.log('Времето за изпълнение отне: ', (result / 1000).toFixed(2), 'секунди');
+    return page;
 
   } catch (error) {
     if (error instanceof Error) {
@@ -66,8 +124,9 @@ export async function mainPuppeteer(entry: IEntry) {
         errorMessage: error.message,
       });
 
-      console.log('Неуспешно запазихте номер: ', entry.regNumber, " Моля проверете логовете на http://localhost:3000/users");
+      console.log('Неуспешно запазихте номер: ', entry.regNumber, ' Моля проверете логовете на http://localhost:3000/users');
     }
+    return page;
   }
 }
 

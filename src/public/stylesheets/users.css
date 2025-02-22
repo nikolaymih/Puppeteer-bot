@@ -15,6 +15,17 @@ body .users-column .column-header {
   font-size: 1.2em;
 }
 
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.family-group {
+  padding-left: 20px;
+}
+.family-group .user-display-ele:first-child {
+  padding-left: 0;
+}
+
 
 /** Add User Column **/
 

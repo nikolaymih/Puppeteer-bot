@@ -12,7 +12,8 @@ export interface IEntry {
   regNumber: string,
   purchaseDoc: string | null,
   powerAttorney: string | null,
-  startDay: string
+  parentEntryId: string,
+  startDay: string,
 }
 
 interface UploadedFile {

@@ -2,6 +2,66 @@ import {Page} from 'puppeteer';
 import path from 'path';
 import {IEntry} from '@src/models/Entry';
 import {initiateScreenShot} from '@src/puppeteer/index';
+import keySender from 'node-key-sender';
+
+async function sendKeysSequentially() {
+  // await keySender.sendKey('down');
+  // await new Promise((resolve) => setTimeout(resolve, 50));
+
+  await keySender.sendKey('enter');
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  const keys = ['1', '9', '0', '8', 'enter'];
+  await keySender.sendCombination(keys);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+}
+
+async function finalKepPart() {
+  // Изберете удостоверение
+  await keySender.sendKey('down');
+  await keySender.sendKey('down');
+  await keySender.sendKey('enter');
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  // Следните даннни ще бъдат подписани.
+  await keySender.sendKey('enter');
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  // Вкарване на пин и натискане на enter
+  const keys = ['1', '9', '0', '8'];
+  await keySender.sendCombination(keys);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+}
+
+async function waitForSearchResult(page: Page, millisecondsToWait: number) {
+  // Натисни бутона Търси
+  await page.locator('body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-body > div.search-box.search-box--report > fieldset > div.card-footer > div > div.right-side > button').click();
+
+  const selector1 = 'body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-body > fieldset > legend';
+  const selector2 = 'body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-body > div:nth-child(3)';
+
+  // Add a small delay to ensure DOM updates
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  const foundSelector = await Promise.race([
+    page.waitForSelector(selector1, { timeout: millisecondsToWait, visible: true })
+      .then(() => selector1)
+      .catch(() => 'break'),
+    page.waitForSelector(selector2, { timeout: millisecondsToWait, visible: true })
+      .then(() => selector2)
+      .catch(() => null),
+  ]);
+
+  console.log('Race winner:', foundSelector);
+
+  if (foundSelector === selector1) {
+    return true;
+  } else if (foundSelector === selector2) {
+    return false;
+  } else {
+    return 'break';
+  }
+}
 
 export async function kepLogin(page: Page) {
   const targetEls = await page.$$('body > div.layout-wrapper > main > div.main-wrapper.section-wrapper.section-wrapper--margins.fixed-content-width > div.page-wrapper > div > div > div:nth-child(3) > section:nth-child(1) > a > div > div > div > h3');
@@ -9,6 +69,10 @@ export async function kepLogin(page: Page) {
     const iHtml = await page.evaluate(el => el.innerHTML, target);
     if (iHtml.trim() === 'Вход с КЕП') {
       await target.click();
+
+      setTimeout(async () => {
+        await sendKeysSequentially();
+      }, 500);
 
       await page.waitForNavigation({waitUntil: 'networkidle0'});
 
@@ -31,7 +95,6 @@ export async function handleStepOnePerson(page: Page, entry: IEntry, screenshotP
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.names\\.last').fill(entry.lastName);
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identifier\\.item').fill(entry.securityNumber);
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identityNumber').fill(entry.documentNumber);
-
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identitityIssueDate').fill(entry.issuedOn);
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identityIssuer').fill(entry.issuer);
 
@@ -54,22 +117,28 @@ export async function handleStepOneCompany(page: Page, entry: IEntry, screenshot
 
   await initiateScreenShot(page, `${entry.id}/mvr-step1.jpeg`, screenshotPath);
 
+  await page.waitForSelector('#applicant_recipientGroup\\.recipient\\.itemEntityBasicData\\.name');
+
+  // Изчакваме да бъдат извлечени данните.
+  await page.waitForFunction(
+    () => {
+      const input = document.querySelector('#applicant_recipientGroup\\.recipient\\.itemEntityBasicData\\.name') as HTMLInputElement;
+      return input && input.value !== '';
+    },
+    {timeout: 10000}, // default is 30 seconds
+  );
+
   // Продължи към стъпка 3
-  setTimeout(async () => {
-    await page.locator('#PAGE-NAV > nav > ul > li:nth-child(3) > div.nav-item-title > button').click();
-  }, 1000);
+  await page.locator('#PAGE-NAV > nav > ul > li:nth-child(3) > div.nav-item-title > button').click();
 }
 
 export async function handleStepTwo(page: Page, id: string) {
   // Премини от стъпка 3 към 4
-  // eslint-disable-next-line no-console
   await page.waitForSelector('#ARTICLE-CONTENT > div > fieldset:nth-child(2) > div > div > p');
 
-  setTimeout(async () => {
-    await page.locator('#PAGE-NAV > nav > ul > li:nth-child(4) > div.nav-item-title > button').click();
-    await initiateScreenShot(page, `${id}/mvr-step2.jpeg`);
-    await page.locator('#PAGE-NAV > nav > ul > li:nth-child(4) > div.nav-item-title > button').click();
-  }, 1000);
+  await initiateScreenShot(page, `${id}/mvr-step2.jpeg`);
+  await page.locator('#PAGE-NAV > nav > ul > li:nth-child(4) > div.nav-item-title > button').click();
+  await page.locator('#PAGE-NAV > nav > ul > li:nth-child(4) > div.nav-item-title > button').click();
 }
 
 export async function handleStepThree(page: Page, id: string) {
@@ -77,14 +146,14 @@ export async function handleStepThree(page: Page, id: string) {
   const checkboxes = await page.$$('input[type="checkbox"]');
 
   // Loop through each checkbox and click if not checked
-  setTimeout(async () => {
-    for (const checkbox of checkboxes) {
-      const isChecked = await checkbox.evaluate(input => input.checked);
-      if (!isChecked) {
-        await checkbox.click();
-      }
+  // setTimeout(async () => {
+  for (const checkbox of checkboxes) {
+    const isChecked = await checkbox.evaluate(input => input.checked);
+    if (!isChecked) {
+      await checkbox.click();
     }
-  }, 200);
+  }
+  // }, 200);
 
   // Wait until all checkboxes are checked
   await page.waitForFunction(() => {
@@ -160,7 +229,10 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   // Стъпка 2.
   // Избери регион за който се отнася регистрацията
   await page.waitForSelector('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode');
-  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
+  // Варна
+  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
+  // Шумен
+  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
 
   await page.select('#circumstances_aiskatVehicleTypeCode', '8403');
 
@@ -173,11 +245,27 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   await page.waitForSelector('#fourDigitsCriteria_specificRegNumber');
   await page.locator('#fourDigitsCriteria_specificRegNumber').fill(entry.regNumber);
 
-  // Натисни бутона Търси
-  await page.locator('body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-body > div.search-box.search-box--report > fieldset > div.card-footer > div > div.right-side > button').click();
+  let result: string | boolean = false;
+  const millisecondsToWait = 10000;
+  let attempt = 0;
 
-  // Изчакай за намерени резултати
-  await page.waitForSelector('body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-body > fieldset > legend');
+  while (result !== 'break' && result !== true) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+
+    if (attempt > 5) {
+      result = 'break';
+      break;
+    }
+
+    result = await waitForSearchResult(page, millisecondsToWait);
+    attempt++;
+  }
+
+  if (result === 'break') {
+    throw new Error(`Резултатът не успя да бъде намерен в рамките на ${millisecondsToWait / 1000} секунди`);
+  }
 
   await initiateScreenShot(page, `${entry.id}/mvr-step52.jpeg`);
 
@@ -190,4 +278,18 @@ export async function handleStepFive(page: Page, entry: IEntry) {
 
   // Отиди към последна стъпка
   await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-secondary').click();
+}
+
+export async function handleStepSix(page: Page) {
+  // Стъпка 6.
+  // Натисни бутона за подписване
+  await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click();
+
+  // Натисни бутона за смарт карта
+  await page.locator('#SIGN_FORM > div.card-body > div.interactive-container > div > div.row.align-items-center > div:nth-child(1) > button').click();
+
+  // Финална част от кеп
+  setTimeout(async () => {
+    await finalKepPart();
+  }, 2000);
 }

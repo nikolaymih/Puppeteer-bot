@@ -1,5 +1,9 @@
 // **** Variables **** //
 
+Handlebars.registerHelper('multiply', function(num1, num2) {
+    return num1 * num2;
+});
+
 Handlebars.registerHelper('equals', function (a, b, options) {
   return a === b ? options.fn(this) : options.inverse(this);
 });
@@ -68,20 +72,43 @@ displayFutureEntries();
  * Call api
  */
 function displayFutureEntries() {
+  const selectElement = document.getElementById('connection-select');
+  selectElement.innerHTML = '<option value="1">Индивидуален</option>';
+
   Http
     .get('/api/entries/get-future')
     .then(resp => resp.json())
     .then(resp => {
+      // First template for displaying entries
       var allEntriesTemplate = document.getElementById('all-entries-template'),
         allEntriesTemplateHtml = allEntriesTemplate.innerHTML,
         template = Handlebars.compile(allEntriesTemplateHtml);
       var allEntriesAnchor = document.getElementById('all-entries-anchor');
-      // allEntriesAnchor.innerHTML = template({entries: resp});
-      allEntriesAnchor.innerHTML = template({
-        entries: resp.map(entry => ({
+      // Map over the nested structure
+      const mappedEntries = resp.map(group =>
+        group.map(entry => ({
           ...entry,
           powerAttorney: entry.powerAttorney || '-',
-          createdFormatted: entry.startDay,
+          parentEntryId: entry.parentEntryId === '1' ? '-' : entry.parentEntryId,
+        }))
+      );
+
+      allEntriesAnchor.innerHTML = template({
+        entries: mappedEntries
+      });
+
+      // Second template for select options - flatten the array for select
+      var selectTemplate = document.getElementById('select-entry-template'),
+        selectTemplateHtml = selectTemplate.innerHTML,
+        template = Handlebars.compile(selectTemplateHtml);
+      var selectElement = document.getElementById('connection-select');
+
+      // Flatten the nested array for select options
+      const flatEntries = resp.flat();
+      selectElement.innerHTML += template({
+        entries: flatEntries.map(entry => ({
+          ...entry,
+          powerAttorney: entry.powerAttorney || '-',
         })),
       });
     });
@@ -108,10 +135,6 @@ function showOldEntries() {
     });
 }
 
-function showExecScreenshotsFolder(screenshotPaths) {
-
-}
-
 const form = document.getElementById('submit-form');
 form.addEventListener('submit', handleForSubmission);
 form.addEventListener("submit", clearFormAfterSubmission);
@@ -130,6 +153,7 @@ function handleForSubmission(event) {
   formData.append('documentNumber', entries.documentNumber.toString());
   formData.append('issuedOn', entries.issuedOn);
   formData.append('issuer', entries.issuer);
+  formData.append('parentEntryId', entries.parentEntryId);
   formData.append('bullstat', entries.bullstat.toString());
   formData.append('regNumber', entries.regNumber);
   formData.append('purchaseDoc', entries.purchaseDoc); // File
@@ -147,91 +171,14 @@ function clearFormAfterSubmission() {
 
 // Setup event listener for button click
 document.addEventListener('click', event => {
-  // event.preventDefault();
   var ele = event.target;
-  // if (ele.matches('#add-user-btn')) {
-  //   addUser();
-  // } else if (ele.matches('.edit-user-btn')) {
-  //   showEditView(ele.parentNode.parentNode);
-  // } else if (ele.matches('.cancel-edit-btn')) {
-  //   cancelEdit(ele.parentNode.parentNode);
-  // } else if (ele.matches('.submit-edit-btn')) {
-  //   submitEdit(ele);
-  // }
   if (ele.matches('.delete-user-btn')) {
     deleteEntry(ele);
   }
 }, false);
 
 /**
- * Add a new user.
- */
-function addUser() {
-  var nameInput = document.getElementById('name-input');
-  var emailInput = document.getElementById('email-input');
-  var data = {
-    user: {
-      id: -1,
-      name: nameInput.value,
-      email: emailInput.value,
-      created: new Date(),
-    },
-  };
-  // Call api
-  Http
-    .post('/api/users/add', data)
-    .then(() => {
-      nameInput.value = '';
-      emailInput.value = '';
-      displayFutureEntries();
-    });
-}
-
-/**
- * Show edit view.
- */
-function showEditView(userEle) {
-  var normalView = userEle.getElementsByClassName('normal-view')[0];
-  var editView = userEle.getElementsByClassName('edit-view')[0];
-  normalView.style.display = 'none';
-  editView.style.display = 'block';
-}
-
-/**
- * Cancel edit.
- */
-function cancelEdit(userEle) {
-  var normalView = userEle.getElementsByClassName('normal-view')[0];
-  var editView = userEle.getElementsByClassName('edit-view')[0];
-  normalView.style.display = 'block';
-  editView.style.display = 'none';
-}
-
-/**
- * Submit edit.
- */
-function submitEdit(ele) {
-  var userEle = ele.parentNode.parentNode;
-  var nameInput = userEle.getElementsByClassName('name-edit-input')[0];
-  var emailInput = userEle.getElementsByClassName('email-edit-input')[0];
-  var id = ele.getAttribute('data-user-id');
-  var created = ele.getAttribute('data-user-created');
-
-  var data = {
-    user: {
-      id: Number(id),
-      name: nameInput.value,
-      email: emailInput.value,
-      created: new Date(created),
-    },
-  };
-  Http
-    .put('/api/users/update', data)
-    .then(() => displayFutureEntries());
-}
-
-/**
- * Delete a user
+ * Delete an entry
  */
 function deleteEntry(ele) {
   var id = ele.getAttribute('data-user-id');

@@ -21,10 +21,16 @@ async function deleteEntry(id: string): Promise<void> {
   return orm.saveDb(db);
 }
 
+async function getChildByParentId(parentId: string): Promise<IEntry | undefined> {
+  const db = await orm.openDb();
+  return db.entries.find(entry => entry.parentEntryId === parentId);
+}
+
 // **** Export default **** //
 
 export default {
   add,
   getFuture,
   deleteEntry,
+  getChildByParentId
 } as const;

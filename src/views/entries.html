@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head -->
+<head>
+    <meta charset="UTF-8">
+    <title>Users</title>
+    <link rel="stylesheet" type="text/css" href="/stylesheets/users.css"/>
+
+    <!-- Handlebars -->
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"></script>
+
+    <!-- Bootstrap -->
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+            crossorigin="anonymous"
+    />
+    <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+            crossorigin="anonymous"
+    ></script>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://unpkg.com/gijgo@1.9.14/js/gijgo.min.js" type="text/javascript"></script>
+    <link href="https://unpkg.com/gijgo@1.9.14/css/gijgo.min.css" rel="stylesheet" type="text/css"/>
+</head>
+
+<!-- Body -->
+<body>
+
+<!-- Add Users -->
+<div class="users-column add-user-col">
+    <form id="submit-form">
+        <h2 class="column-header">
+            Добави информация за търсене на номер:
+        </h2>
+
+        <div>
+            <p class="fw-bold">Качество на заявителя</p>
+            <div>
+                <input required type="radio" id="person" name="representative" value="Физическо лице"
+                       onclick="toggleContent()"/>
+                <label for="person">Пълномощник на друго физическо или юридическо лице</label>
+            </div>
+
+            <div>
+                <input required type="radio" id="firm" name="representative" value="Юридическо лице"
+                       onclick="toggleContent()"/>
+                <label for="firm">Законен представител на юридическо лице</label>
+            </div>
+        </div>
+
+        <div id="personContent" class="mt-2 d-none">
+            <div>
+                <label class="fw-bold" for="firstName">Собствено име</label>
+                <input
+                        name="firstName"
+                        id="firstName"
+                        type="text"
+                        class="form-control mt-1"
+                />
+            </div>
+            <div>
+                <label class="fw-bold" for="middleName">Презиме</label>
+                <input
+                        name="middleName"
+                        id="middleName"
+                        type="text"
+                        class="form-control mt-1"
+                />
+            </div>
+            <div>
+                <label class="fw-bold" for="lastName">Фамилно име</label>
+                <input
+                        name="lastName"
+                        id="lastName"
+                        type="text"
+                        class="form-control mt-1"
+                />
+            </div>
+            <div>
+                <label class="fw-bold" for="securityNumber">ЕГН</label>
+                <input
+                        name="securityNumber"
+                        id="securityNumber"
+                        type="Number"
+                        class="form-control mt-1"
+                />
+            </div>
+            <div>
+                <label class="fw-bold" for="documentNumber">Документ №</label>
+                <input
+                        name="documentNumber"
+                        id="documentNumber"
+                        type="number"
+                        class="form-control mt-1"
+                />
+            </div>
+            <div>
+                <div>
+                    <label for="issuedOn" class="fw-bold">Издаден на</label>
+                    <input name="issuedOn" id="issuedOn" class="form-control mb-0"/>
+                </div>
+            </div>
+
+            <script>
+              $('#issuedOn').datetimepicker({
+                uiLibrary: 'bootstrap5',
+                format: 'dd-mm-yyyy',
+                modal: true,
+                footer: true,
+              });
+            </script>
+
+            <div>
+                <label class="fw-bold" for="issuer">Издател</label>
+                <input
+                        name="issuer"
+                        id="issuer"
+                        type="text"
+                        class="form-control mt-1"
+                />
+            </div>
+        </div>
+
+        <div id="firmContent" class="mt-2 d-none">
+            <label class="fw-bold" for="bullstat">Получател на електронната административна услуга</label>
+            <input
+                    name="bullstat"
+                    id="bullstat"
+                    type="number"
+                    class="form-control mt-1"
+                    placeholder="ЕИК/Булстат"
+            />
+        </div>
+
+        <div class="mt-2">
+            <label class="fw-bold" for="regNumber">Избор на регистрационен номер</label>
+            <div>
+                <input name="regNumber" id="regNumber" required class="form-control mt-1" type="text"
+                       placeholder="Регистрационен номер">
+            </div>
+        </div>
+
+        <div>
+            <p class="fw-bold">Приложени документи:</p>
+
+            <div class="mt-2">
+                <label class="fw-bold" for="purchaseDoc">Документ за придобиване на ППС</label>
+                <div>
+                    <input required name="purchaseDoc" id="purchaseDoc" class="form-control mt-1" type="file">
+                </div>
+            </div>
+
+            <div class="mt-2">
+                <label class="fw-bold" for="powerAttorney">Нотариално заверено изрично пълномощно</label>
+                <div>
+                    <input name="powerAttorney" id="powerAttorney" class="form-control mt-1" type="file">
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <label for="startDay" class="fw-bold">Избор на дата и час за стартиране</label>
+            <input name="startDay" required id="startDay" class="form-control mb-0"/>
+        </div>
+
+        <div class="mb-3">
+            <div><b>Свържи стартирането с друг номер :</b></div>
+            <label>
+                <select name="parentEntryId" class="form-control mt-1 cursor-pointer" id="connection-select">
+                    <option value="Индивидуален">Индивидуален</option>
+                </select>
+
+                <script id="select-entry-template" type="text/x-handlebars-template">
+                    {{#each entries}}
+                        <option value="{{id}}">{{id}}</option>
+                    {{/each}}
+                </script>
+            </label>
+        </div>
+
+        <script>
+          $('#startDay').datetimepicker({
+            uiLibrary: 'bootstrap5',
+            format: 'yyyy-mm-dd HH:MM:ss',
+            modal: true,
+            footer: true,
+            showSecond: true,
+            showMillisec: true,
+          });
+        </script>
+
+        <div>
+            <button
+                    id="add-user-btn"
+                    class="btn btn-success"
+            >
+                Създай
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Display Users -->
+<div class="users-column">
+    <div class="column-header family-group">
+        Бъдещи задачи:
+    </div>
+
+    <div id="all-entries-anchor"></div>
+    <script
+            id="all-entries-template"
+            type="text/x-handlebars-template"
+    >
+        {{#each entries}}
+            <div class="family-group">
+                {{#each this}}
+                    <div class="user-display-ele" style="margin-left: {{multiply @index 20}}px">
+                        <div class="normal-view">
+                            <div><b>Тип на заявителя:</b> {{representative}}</div>
+                            <div><b>Идентификационен номер:</b> {{id}}</div>
+                            <div><b>Връзка с номер:</b> {{parentEntryId}}</div>
+                            {{#equals representative "Физическо лице"}}
+                                <div><b>Име:</b> {{firstName}}</div>
+                                <div><b>Презиме:</b> {{middleName}}</div>
+                                <div><b>Фамилия:</b> {{lastName}}</div>
+                                <div><b>ЕГН:</b> {{securityNumber}}</div>
+                                <div><b>Лична карта №:</b> {{documentNumber}}</div>
+                                <div><b>Издаден на:</b> {{issuedOn}}</div>
+                                <div><b>Издаден oт:</b> {{issuer}}</div>
+                            {{else}}
+                                <div><b>Булстат:</b> {{bullstat}}</div>
+                            {{/equals}}
+
+                            <div><b>Регистрационен номер:</b> {{regNumber}}</div>
+                            <div><b>Име на документ за придобиване:</b> {{purchaseDoc}}</div>
+                            <div><b>Име на документ за пълномощно:</b> {{powerAttorney}}</div>
+                            <div><b>Дата на стартиране:</b> {{startDay}}</div>
+                            <button
+                                    class="btn btn-danger delete-user-btn"
+                                    data-user-id="{{id}}"
+                            >
+                                Изтрий запис
+                            </button>
+                        </div>
+                    </div>
+                {{/each}}
+            </div>
+        {{/each}}
+    </script>
+</div>
+
+<div>
+    <h4 class="column-header mt-4">
+        Последни 20 записа
+    </h4>
+
+    <div id="all-executors-anchor"></div>
+
+    <script
+            id="all-еxecutors-template"
+            type="text/x-handlebars-template"
+    >
+        {{#each executors}}
+            <div class="еxecutors-display-ele mt-3">
+                <div class="normal-view">
+                    <div><b>Състояние:</b> {{isSuccessful}}</div>
+                    <div><b>Грешка:</b> {{errorMessage}}</div>
+                    <div><b>Релативен път към снимки:</b> {{screenshotPaths}}</div>
+                    <div><b>Тип на заявителя:</b> {{representative}}</div>
+                    <div><b>Регистрационен номер:</b> {{regNumber}}</div>
+
+                    {{#equals representative "Физическо лице"}}
+                        <div><b>Име:</b> {{firstName}}</div>
+                        <div><b>Презиме:</b> {{middleName}}</div>
+                        <div><b>Фамилия:</b> {{lastName}}</div>
+                        <div><b>ЕГН:</b> {{securityNumber}}</div>
+                        <div><b>Лична карта №:</b> {{documentNumber}}</div>
+                        <div><b>Издаден на:</b> {{issuedOn}}</div>
+                        <div><b>Издаден oт:</b> {{issuer}}</div>
+                    {{else}}
+                        <div><b>Булстат:</b> {{bullstat}}</div>
+                    {{/equals}}
+
+                    <div><b>Име на документ за придобиване:</b> {{purchaseDoc}}</div>
+                    <div><b>Име на документ за пълномощно:</b> {{powerAttorney}}</div>
+                    <div><b>Дата на стартиране:</b> {{startDay}}</div>
+                </div>
+            </div>
+        {{/each}}
+    </script>
+
+    <button
+            id="add-logs-btn"
+            class="btn btn-success mt-2"
+            onclick="showOldEntries()"
+    >
+        Покажи
+    </button>
+
+</div>
+</body>
+
+<script src="scripts/http.js"></script>
+<script src="scripts/users.js"></script>
+</html>

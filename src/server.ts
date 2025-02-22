@@ -88,9 +88,10 @@ app.get('/', async (_: Request, res: Response) => {
     issuer: 'МВР ВАРНА',
     bullstat: '231321',
     regNumber: 'B9699НТ',
+    parentEntryId: 'Индивидуален',
     startDay: '2024-11-24 18:02:30',
     purchaseDoc: 'test',
-    powerAttorney: 'test2'
+    powerAttorney: 'test2',
   };
 
   await mainPuppeteer(entry);
@@ -101,7 +102,7 @@ app.get('/', async (_: Request, res: Response) => {
 
 // Redirect to login if not logged in.
 app.get('/users', (_: Request, res: Response) => {
-  return res.sendFile('users.html', {root: viewsDir});
+  return res.sendFile('entries.html', {root: viewsDir});
 });
 
 
