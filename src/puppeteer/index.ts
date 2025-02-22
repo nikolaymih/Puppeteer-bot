@@ -97,7 +97,7 @@ async function executeEntry(entry: IEntry, page?: Page): Promise<Page> {
 
     await handleStepFive(page, entry);
 
-    await handleStepSix(page);
+    await handleStepSix(page, entry, screenshotPaths);
 
     await initiateScreenShot(page, `${entry.id}/mvr-step6.jpeg`);
 
@@ -112,6 +112,10 @@ async function executeEntry(entry: IEntry, page?: Page): Promise<Page> {
     const end = Date.now();
     const result = end - start;
     console.log('Времето за изпълнение отне: ', (result / 1000).toFixed(2), 'секунди');
+
+    // Да добавим изчакване на достигната последна стъпки и да се продължи с натискане на бутона към следващата.
+    //  await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click()
+
     return page;
 
   } catch (error) {
@@ -125,6 +129,9 @@ async function executeEntry(entry: IEntry, page?: Page): Promise<Page> {
       });
 
       console.log('Неуспешно запазихте номер: ', entry.regNumber, ' Моля проверете логовете на http://localhost:3000/users');
+
+      // Да добавим изчакване на потребителя сам да си завърши запазването на номера.
+      //  await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click()
     }
     return page;
   }

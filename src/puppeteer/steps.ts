@@ -280,7 +280,7 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-secondary').click();
 }
 
-export async function handleStepSix(page: Page) {
+export async function handleStepSix(page: Page, entry: IEntry, screenshotPath: string[]) {
   // Стъпка 6.
   // Натисни бутона за подписване
   await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click();
@@ -288,8 +288,14 @@ export async function handleStepSix(page: Page) {
   // Натисни бутона за смарт карта
   await page.locator('#SIGN_FORM > div.card-body > div.interactive-container > div > div.row.align-items-center > div:nth-child(1) > button').click();
 
-  // Финална част от кеп
-  setTimeout(async () => {
-    await finalKepPart();
-  }, 2000);
+  await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPath);
+
+  if (entry.parentEntryId === '1') {
+    // Финална част от кеп
+    setTimeout(async () => {
+      await finalKepPart();
+    }, 2000);
+
+    await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPath);
+  }
 }
