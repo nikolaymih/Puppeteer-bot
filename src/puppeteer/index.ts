@@ -1,6 +1,6 @@
 import puppeteer, {Browser, Page} from 'puppeteer';
 import pathLib from 'path';
-import {handleStepFour, handleStepThree, handleStepOnePerson, handleStepOneCompany, handleStepTwo, handleStepFive, kepLogin, handleStepSix} from '@src/puppeteer/steps';
+import {handleStepFour, handleStepThree, handleStepOnePerson, handleStepOneCompany, handleStepTwo, handleStepFive, kepLogin, handleStepSix, finalStepSeven} from '@src/puppeteer/steps';
 import {IEntry} from '@src/models/Entry';
 import {goToLink, RepresentativeValues} from '@src/common/misc';
 import ExecutorService from '@src/services/ExecutorService';
@@ -26,20 +26,24 @@ export async function mainPuppeteer(entry: IEntry) {
 
   // Run top lvl entry + child entries
   let page: Page | undefined;
+  let currentEntryIndex = 0;
   for (const entry1 of entriesList) {
+    const isThereNextEntry = currentEntryIndex < entriesList.length - 1;
     if (page) {
-      await executeEntry(entry1, page);
+      await executeEntry(entry1, isThereNextEntry, page);
       return;
     }
 
-    const pageFromExecution = await executeEntry(entry1);
+    const pageFromExecution = await executeEntry(entry1, isThereNextEntry);
     if (pageFromExecution) {
       page = pageFromExecution;
     }
+
+    currentEntryIndex++;
   }
 }
 
-async function executeEntry(entry: IEntry, page?: Page): Promise<Page> {
+async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Page): Promise<Page> {
   const screenshotPaths: string[] = [];
   let browser: Browser | undefined;
 
@@ -83,6 +87,9 @@ async function executeEntry(entry: IEntry, page?: Page): Promise<Page> {
       await page.locator('#ARTICLE-CONTENT > div.alert.alert-info > button').click();
     }
 
+    // Да проверим дали имаме нужда от този код
+    // await page.waitForSelector('#ARTICLE-CONTENT > div.alert.alert-info > button');
+
     const start = Date.now();
 
     entry.representative === RepresentativeValues.PERSONAL
@@ -99,7 +106,13 @@ async function executeEntry(entry: IEntry, page?: Page): Promise<Page> {
 
     await handleStepSix(page, entry, screenshotPaths);
 
+    isThereNextEntry && await finalStepSeven(page, entry, screenshotPaths);
+
     await initiateScreenShot(page, `${entry.id}/mvr-step6.jpeg`);
+
+    const end = Date.now();
+    const result = ((end - start) / 1000).toFixed(2);
+    console.log('Времето за изпълнение отне: ', result, 'секунди');
 
     await ExecutorService.createExecutor({
       id: entry.id,
@@ -107,11 +120,8 @@ async function executeEntry(entry: IEntry, page?: Page): Promise<Page> {
       entryId: entry.id,
       isSuccessful: true,
       errorMessage: '',
+      executionTime: result,
     });
-
-    const end = Date.now();
-    const result = end - start;
-    console.log('Времето за изпълнение отне: ', (result / 1000).toFixed(2), 'секунди');
 
     // Да добавим изчакване на достигната последна стъпки и да се продължи с натискане на бутона към следващата.
     //  await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click()

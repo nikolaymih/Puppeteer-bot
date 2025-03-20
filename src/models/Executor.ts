@@ -4,6 +4,7 @@ export interface IExecutors {
   isSuccessful: boolean,
   errorMessage: string,
   screenshotPaths: string[]
+  executionTime?: string
 }
 
 export interface ICompleteLogger extends IExecutors {}

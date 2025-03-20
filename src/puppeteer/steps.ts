@@ -9,7 +9,7 @@ async function sendKeysSequentially() {
   // await new Promise((resolve) => setTimeout(resolve, 50));
 
   await keySender.sendKey('enter');
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await new Promise((resolve) => setTimeout(resolve, 150));
 
   const keys = ['1', '9', '0', '8', 'enter'];
   await keySender.sendCombination(keys);
@@ -231,7 +231,7 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   await page.waitForSelector('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode');
   // Варна
   // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
-  // Шумен
+  // // Шумен
   await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
 
   await page.select('#circumstances_aiskatVehicleTypeCode', '8403');
@@ -298,4 +298,12 @@ export async function handleStepSix(page: Page, entry: IEntry, screenshotPath: s
 
     await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPath);
   }
+}
+
+export async function finalStepSeven(page: Page, entry: IEntry, screenshotPath: string[]) {
+  // Стъпке 7
+  // Изчакване на процеса да потвърди регистрацията и при нужда преминаваме към следващия номер
+  await page.locator('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button').click();
+
+  await initiateScreenShot(page, `${entry.id}/mvr-step7.jpeg`, screenshotPath);
 }
