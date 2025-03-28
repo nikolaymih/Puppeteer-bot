@@ -44,10 +44,10 @@ async function waitForSearchResult(page: Page, millisecondsToWait: number) {
   await new Promise(resolve => setTimeout(resolve, 100));
 
   const foundSelector = await Promise.race([
-    page.waitForSelector(selector1, { timeout: millisecondsToWait, visible: true })
+    page.waitForSelector(selector1, {timeout: millisecondsToWait, visible: true})
       .then(() => selector1)
       .catch(() => 'break'),
-    page.waitForSelector(selector2, { timeout: millisecondsToWait, visible: true })
+    page.waitForSelector(selector2, {timeout: millisecondsToWait, visible: true})
       .then(() => selector2)
       .catch(() => null),
   ]);
@@ -130,6 +130,7 @@ export async function handleStepOneCompany(page: Page, entry: IEntry, screenshot
 
   // Продължи към стъпка 3
   await page.locator('#PAGE-NAV > nav > ul > li:nth-child(3) > div.nav-item-title > button').click();
+  // await page.locator('#PAGE-NAV > nav > ul > li:nth-child(4) > div.nav-item-title > button').click();
 }
 
 export async function handleStepTwo(page: Page, id: string) {
@@ -142,6 +143,7 @@ export async function handleStepTwo(page: Page, id: string) {
 }
 
 export async function handleStepThree(page: Page, id: string) {
+  await page.waitForSelector('#ARTICLE-CONTENT > div > div.ui-form.ui-form--input > fieldset:nth-child(1) > legend > h3');
   await page.waitForSelector('input[type="checkbox"]');
   const checkboxes = await page.$$('input[type="checkbox"]');
 
