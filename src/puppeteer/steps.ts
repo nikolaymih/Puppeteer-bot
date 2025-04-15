@@ -1,7 +1,7 @@
-import {Page} from 'puppeteer';
+import { Page } from 'puppeteer';
 import path from 'path';
-import {IEntry} from '@src/models/Entry';
-import {initiateScreenShot} from '@src/puppeteer/index';
+import { IEntry } from '@src/models/Entry';
+import { initiateScreenShot } from '@src/puppeteer/index';
 import keySender from 'node-key-sender';
 
 async function sendKeysSequentially() {
@@ -11,7 +11,7 @@ async function sendKeysSequentially() {
   await keySender.sendKey('enter');
   await new Promise((resolve) => setTimeout(resolve, 150));
 
-  const keys = ['1', '9', '0', '8', 'enter'];
+  const keys = ['9', '9', '9', '9', 'enter'];
   await keySender.sendCombination(keys);
   await new Promise((resolve) => setTimeout(resolve, 50));
 }
@@ -28,7 +28,7 @@ async function finalKepPart() {
   await new Promise((resolve) => setTimeout(resolve, 50));
 
   // Вкарване на пин и натискане на enter
-  const keys = ['1', '9', '0', '8'];
+  const keys = ['9', '9', '9', '9'];
   await keySender.sendCombination(keys);
   await new Promise((resolve) => setTimeout(resolve, 50));
 }
@@ -44,10 +44,10 @@ async function waitForSearchResult(page: Page, millisecondsToWait: number) {
   await new Promise(resolve => setTimeout(resolve, 100));
 
   const foundSelector = await Promise.race([
-    page.waitForSelector(selector1, {timeout: millisecondsToWait, visible: true})
+    page.waitForSelector(selector1, { timeout: millisecondsToWait, visible: true })
       .then(() => selector1)
       .catch(() => 'break'),
-    page.waitForSelector(selector2, {timeout: millisecondsToWait, visible: true})
+    page.waitForSelector(selector2, { timeout: millisecondsToWait, visible: true })
       .then(() => selector2)
       .catch(() => null),
   ]);
@@ -74,7 +74,7 @@ export async function kepLogin(page: Page) {
         await sendKeysSequentially();
       }, 500);
 
-      await page.waitForNavigation({waitUntil: 'networkidle0'});
+      await page.waitForNavigation({ waitUntil: 'networkidle0' });
 
       await page.goto('https://e-uslugi.mvr.bg/services/applicationProcesses/371');
 
@@ -125,7 +125,7 @@ export async function handleStepOneCompany(page: Page, entry: IEntry, screenshot
       const input = document.querySelector('#applicant_recipientGroup\\.recipient\\.itemEntityBasicData\\.name') as HTMLInputElement;
       return input && input.value !== '';
     },
-    {timeout: 10000}, // default is 30 seconds
+    { timeout: 10000 }, // default is 30 seconds
   );
 
   // Продължи към стъпка 3
@@ -147,15 +147,18 @@ export async function handleStepThree(page: Page, id: string) {
   await page.waitForSelector('input[type="checkbox"]');
   const checkboxes = await page.$$('input[type="checkbox"]');
 
+  console.log('checkboxes', checkboxes)
   // Loop through each checkbox and click if not checked
-  // setTimeout(async () => {
-  for (const checkbox of checkboxes) {
-    const isChecked = await checkbox.evaluate(input => input.checked);
-    if (!isChecked) {
-      await checkbox.click();
+  setTimeout(async () => {
+    for (const checkbox of checkboxes) {
+      const isChecked = await checkbox.evaluate(input => input.checked);
+      console.log(isChecked)
+      if (!isChecked) {
+        await checkbox.click();
+        console.log('vliza li')
+      }
     }
-  }
-  // }, 200);
+  }, 500);
 
   // Wait until all checkboxes are checked
   await page.waitForFunction(() => {
@@ -232,9 +235,7 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   // Избери регион за който се отнася регистрацията
   await page.waitForSelector('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode');
   // Варна
-  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
-  // // Шумен
-  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
+  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
 
   await page.select('#circumstances_aiskatVehicleTypeCode', '8403');
 
@@ -274,7 +275,7 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   // При намерен резултат, затвори модала
   await page.locator('body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-footer > div > div.right-side > button').click();
 
-  await page.waitForSelector('.modal', {hidden: true});
+  await page.waitForSelector('.modal', { hidden: true });
 
   await page.locator('#circumstances_agreementToReceiveERefusal').click();
 
