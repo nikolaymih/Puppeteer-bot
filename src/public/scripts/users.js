@@ -137,7 +137,7 @@ function showOldEntries() {
 
 const form = document.getElementById('submit-form');
 form.addEventListener('submit', handleForSubmission);
-form.addEventListener("submit", clearFormAfterSubmission);
+// form.addEventListener("submit", clearFormAfterSubmission);
 
 function handleForSubmission(event) {
   event.preventDefault();
