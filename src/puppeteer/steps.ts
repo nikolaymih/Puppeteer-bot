@@ -18,19 +18,23 @@ async function sendKeysSequentially() {
 
 async function finalKepPart() {
   // Изберете удостоверение
-  await keySender.sendKey('down');
-  await keySender.sendKey('down');
+  // await keySender.sendKey('down');
+  // await keySender.sendKey('down');
   await keySender.sendKey('enter');
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await new Promise((resolve) => setTimeout(resolve, 100));
 
   // Следните даннни ще бъдат подписани.
   await keySender.sendKey('enter');
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await new Promise((resolve) => setTimeout(resolve, 100));
 
   // Вкарване на пин и натискане на enter
   const keys = ['9', '9', '9', '9'];
   await keySender.sendCombination(keys);
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
+  // Натисни Enter след записване на номер-а.
+  await keySender.sendKey('enter');
+  await new Promise((resolve) => setTimeout(resolve, 100));
 }
 
 async function waitForSearchResult(page: Page, millisecondsToWait: number) {
@@ -41,7 +45,7 @@ async function waitForSearchResult(page: Page, millisecondsToWait: number) {
   const selector2 = 'body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-body > div:nth-child(3)';
 
   // Add a small delay to ensure DOM updates
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await new Promise(resolve => setTimeout(resolve, 500));
 
   const foundSelector = await Promise.race([
     page.waitForSelector(selector1, { timeout: millisecondsToWait, visible: true })
@@ -51,8 +55,6 @@ async function waitForSearchResult(page: Page, millisecondsToWait: number) {
       .then(() => selector2)
       .catch(() => null),
   ]);
-
-  console.log('Race winner:', foundSelector);
 
   if (foundSelector === selector1) {
     return true;
@@ -147,15 +149,12 @@ export async function handleStepThree(page: Page, id: string) {
   await page.waitForSelector('input[type="checkbox"]');
   const checkboxes = await page.$$('input[type="checkbox"]');
 
-  console.log('checkboxes', checkboxes)
   // Loop through each checkbox and click if not checked
   setTimeout(async () => {
     for (const checkbox of checkboxes) {
       const isChecked = await checkbox.evaluate(input => input.checked);
-      console.log(isChecked)
       if (!isChecked) {
         await checkbox.click();
-        console.log('vliza li')
       }
     }
   }, 500);
@@ -198,6 +197,10 @@ export async function handleStepFour(page: Page, entry: IEntry) {
 
     await initiateScreenShot(page, `${entry.id}/mvr-step41.jpeg`);
   }
+
+  // Изчакваме малко да се обнови DOM-а.
+  await new Promise(resolve => setTimeout(resolve, 500));
+
   // Прикачване на файл с пълномощно
   // Step 1: Click on the desired option by its text or data-key
   if (entry.powerAttorney) {
@@ -249,15 +252,15 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   await page.locator('#fourDigitsCriteria_specificRegNumber').fill(entry.regNumber);
 
   let result: string | boolean = false;
-  const millisecondsToWait = 10000;
+  const millisecondsToWait = 15000;
   let attempt = 0;
 
   while (result !== 'break' && result !== true) {
     if (attempt > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
     }
 
-    if (attempt > 5) {
+    if (attempt > 100) {
       result = 'break';
       break;
     }
@@ -287,6 +290,9 @@ export async function handleStepSix(page: Page, entry: IEntry, screenshotPath: s
   // Стъпка 6.
   // Натисни бутона за подписване
   await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click();
+
+  // Изчакване на loader-а да приключи.
+  await page.waitForSelector('.loader-overlay.load', { hidden: true });
 
   // Натисни бутона за смарт карта
   await page.locator('#SIGN_FORM > div.card-body > div.interactive-container > div > div.row.align-items-center > div:nth-child(1) > button').click();

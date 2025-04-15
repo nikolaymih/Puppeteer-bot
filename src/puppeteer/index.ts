@@ -7,6 +7,7 @@ import ExecutorService from '@src/services/ExecutorService';
 import fs from 'fs-extra';
 import {windowManager} from 'node-window-manager';
 import EntryService from '@src/services/EntryService';
+import { log } from 'console';
 
 export async function mainPuppeteer(entry: IEntry) {
   const entriesList: IEntry[] = [entry];
@@ -106,7 +107,9 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
 
     await handleStepSix(page, entry, screenshotPaths);
 
-    isThereNextEntry && await finalStepSeven(page, entry, screenshotPaths);
+    isThereNextEntry 
+    ? await finalStepSeven(page, entry, screenshotPaths)
+    : await page.waitForSelector("#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button", {timeout: 60000});
 
     await initiateScreenShot(page, `${entry.id}/mvr-step6.jpeg`);
 
@@ -122,9 +125,6 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
       errorMessage: '',
       executionTime: result,
     });
-
-    // Да добавим изчакване на достигната последна стъпки и да се продължи с натискане на бутона към следващата.
-    //  await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click()
 
     return page;
 
