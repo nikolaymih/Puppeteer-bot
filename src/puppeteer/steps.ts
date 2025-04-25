@@ -16,7 +16,8 @@ async function sendKeysSequentially() {
   await new Promise((resolve) => setTimeout(resolve, 50));
 }
 
-async function finalKepPart() {
+async function finalKepPart(wasThereAPreviousEntry: boolean) {
+  console.log(wasThereAPreviousEntry);
   // Изберете удостоверение
   await keySender.sendKey('down');
   await keySender.sendKey('down');
@@ -284,7 +285,7 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-secondary').click();
 }
 
-export async function handleStepSix(page: Page, entry: IEntry, screenshotPath: string[]) {
+export async function handleStepSix(page: Page, entry: IEntry, screenshotPath: string[], wasThereAPreviousEntry: boolean) {
   // Стъпка 6.
   // Натисни бутона за подписване
   await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click();
@@ -300,7 +301,7 @@ export async function handleStepSix(page: Page, entry: IEntry, screenshotPath: s
   if (entry.parentEntryId === '1') {
     // Финална част от кеп
     setTimeout(async () => {
-      await finalKepPart();
+      await finalKepPart(wasThereAPreviousEntry);
     }, 2000);
 
     await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPath);

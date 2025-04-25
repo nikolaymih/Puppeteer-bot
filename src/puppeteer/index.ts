@@ -46,6 +46,7 @@ export async function mainPuppeteer(entry: IEntry) {
 async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Page): Promise<Page> {
   const screenshotPaths: string[] = [];
   let browser: Browser | undefined;
+  let wasThereAPreviousEntry = false;
 
   if (!page) {
     browser = await puppeteer.launch({
@@ -57,7 +58,14 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     });
 
     page = await browser.newPage();
+    page.setDefaultTimeout(90000);
+  } else {
+    // Проверяваме дали има предишен номер за екзекуцията
+    // Това е нужно за да прескочим стъпката със избирането на смарт карта
+    wasThereAPreviousEntry = true;
   }
+
+  const start = Date.now();
 
   try {
     if (!page || entry.parentEntryId === '1') {
@@ -87,10 +95,10 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
       await page.locator('#ARTICLE-CONTENT > div.alert.alert-info > button').click();
     }
 
-    // Да проверим дали имаме нужда от този код
-    // await page.waitForSelector('#ARTICLE-CONTENT > div.alert.alert-info > button');
+    const startFillingData = Date.now();
 
-    const start = Date.now();
+    // Да проверим дали имаме нужда от този код, който е свързан с изчакването на стартирането на номер 2
+    // await page.waitForSelector('#ARTICLE-CONTENT > div.alert.alert-info > button');
 
     entry.representative === RepresentativeValues.PERSONAL
       ? await handleStepOnePerson(page, entry, screenshotPaths)
@@ -104,7 +112,11 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
 
     await handleStepFive(page, entry);
 
-    await handleStepSix(page, entry, screenshotPaths);
+    const startNumber = Date.now();
+
+    await handleStepSix(page, entry, screenshotPaths, wasThereAPreviousEntry);
+
+    const endNumber = Date.now();
 
     isThereNextEntry && await finalStepSeven(page, entry, screenshotPaths);
 
@@ -112,7 +124,19 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
 
     const end = Date.now();
     const result = ((end - start) / 1000).toFixed(2);
-    console.log('Времето за изпълнение отне: ', result, 'секунди');
+    console.log('Времето за пълното изпълнение отне: ', result, 'секунди');
+
+    const reachingData = ((startFillingData - start) / 1000).toFixed(2);
+    console.log('Времето до отварянето на сайта отне: ', reachingData, 'секунди');
+
+    const fillingResult = ((startNumber - startFillingData) / 1000).toFixed(2);
+    console.log('Времето на попълневането на данните отне: ', fillingResult, 'секунди');
+
+    const numberResult = ((endNumber - startNumber) / 1000).toFixed(2);
+    console.log('Времето за изпълнение на номера отне: ', numberResult, 'секунди');
+
+    const loadingIndicatorResult = ((end - endNumber) / 1000).toFixed(2);
+    console.log('Времето на зареждащия индикатор отне ', loadingIndicatorResult, 'секунди');
 
     await ExecutorService.createExecutor({
       id: entry.id,
@@ -122,9 +146,6 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
       errorMessage: '',
       executionTime: result,
     });
-
-    // Да добавим изчакване на достигната последна стъпки и да се продължи с натискане на бутона към следващата.
-    //  await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click()
 
     return page;
 
@@ -138,10 +159,14 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
         errorMessage: error.message,
       });
 
-      console.log('Неуспешно запазихте номер: ', entry.regNumber, ' Моля проверете логовете на http://localhost:3000/users');
+      console.log(
+        'Неуспешно изпълнение на програмата. Програмата минава в ръчен режим за този номер: ',
+        entry.regNumber,
+        ' Моля проверете логовете на http://localhost:3000/users',
+      );
 
-      // Да добавим изчакване на потребителя сам да си завърши запазването на номера.
-      //  await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click()
+      // Изчакване на потребителя сам да завърши запазването на номера.
+      await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button');
     }
     return page;
   }
