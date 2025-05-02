@@ -17,7 +17,6 @@ async function sendKeysSequentially() {
 }
 
 async function finalKepPart(wasThereAPreviousEntry: boolean) {
-  console.log(wasThereAPreviousEntry);
   // Изберете удостоверение
   // await keySender.sendKey('down');
   // await keySender.sendKey('down');
@@ -28,14 +27,16 @@ async function finalKepPart(wasThereAPreviousEntry: boolean) {
   await keySender.sendKey('enter');
   await new Promise((resolve) => setTimeout(resolve, 100));
 
-  // Вкарване на пин и натискане на enter
-  const keys = ['9', '9', '9', '9'];
-  await keySender.sendCombination(keys);
-  await new Promise((resolve) => setTimeout(resolve, 100));
-
-  // Натисни Enter след записване на номер-а.
-  await keySender.sendKey('enter');
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  if (!wasThereAPreviousEntry) {
+    // Вкарване на пин и натискане на enter
+    const keys = ['9', '9', '9', '9'];
+    await keySender.sendCombination(keys);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    
+    // Натисни Enter след записване на номер-а.
+    // await keySender.sendKey('enter');
+    // await new Promise((resolve) => setTimeout(resolve, 100));
+  }
 }
 
 async function waitForSearchResult(page: Page, millisecondsToWait: number) {
@@ -177,6 +178,8 @@ export async function handleStepFour(page: Page, entry: IEntry) {
   // Step 1: Click on the desired option by its text or data-key
 
   if (entry.purchaseDoc) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     await page.evaluate(() => {
       const input = document.querySelector('#documentTypeID') as HTMLInputElement;
       input?.focus();
