@@ -115,9 +115,9 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
 
     const endNumber = Date.now();
 
-    // isThereNextEntry 
-    // ? await finalStepSeven(page, entry, screenshotPaths)
-    // : await page.waitForSelector("#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button", {timeout: 60000});
+    isThereNextEntry 
+      ? await finalStepSeven(page, entry, screenshotPaths)
+      : await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 60000});
 
     await initiateScreenShot(page, `${entry.id}/mvr-step6.jpeg`);
 
@@ -165,6 +165,7 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
       );
 
       // Изчакване на потребителя сам да завърши запазването на номера.
+      // тук има проблем, ако долният не се получи и се чупи
       await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button');
     }
     return page;
