@@ -12,15 +12,15 @@ async function sendKeysSequentially() {
   await keySender.sendKey('enter');
   await new Promise((resolve) => setTimeout(resolve, 150));
 
-  const keys = ['1', '9', '0', '8', 'enter'];
+  const keys = ['9', '9', '9', '9', 'enter'];
   await keySender.sendCombination(keys);
   await new Promise((resolve) => setTimeout(resolve, 50));
 }
 
 async function finalKepPart2() {
   // Изберете удостоверение
-  await keySender.sendKey('down');
-  await keySender.sendKey('down');
+  // await keySender.sendKey('down');
+  // await keySender.sendKey('down');
   await keySender.sendKey('enter');
   await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -29,7 +29,7 @@ async function finalKepPart2() {
   await new Promise((resolve) => setTimeout(resolve, 100));
 
   // Вкарване на пин и натискане на enter
-  const keys = ['1', '9', '0', '8'];
+  const keys = ['1', '9', '9', '9'];
   await keySender.sendCombination(keys);
   await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -40,14 +40,14 @@ async function finalKepPart2() {
 
 async function finalKepPart(wasThereAPreviousEntry: boolean) {
   // Изберете удостоверение
-  await keyboard.type(Key.Down);
-  await keyboard.type(Key.Down);
+  // await keyboard.type(Key.Down);
+  // await keyboard.type(Key.Down);
   await keyboard.type(Key.Enter);
-  await new Promise((resolve) => setTimeout(resolve, 750));
+  await new Promise((resolve) => setTimeout(resolve, 1200));
 
   // Следните даннни ще бъдат подписани.
   await keyboard.type(Key.Enter);
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await new Promise((resolve) => setTimeout(resolve, 1200));
 
   // Вкарване на пин и натискане на enter
   if (!wasThereAPreviousEntry) {
@@ -60,8 +60,8 @@ async function finalKepPart(wasThereAPreviousEntry: boolean) {
     }
 
     // Натисни Enter след записване на номер-а.
-    // await keyboard.type(Key.Enter);
-    // await new Promise((resolve) => setTimeout(resolve, 100));
+    await keyboard.type(Key.Enter);
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 }
 
@@ -268,9 +268,9 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   // Избери регион за който се отнася регистрацията
   await page.waitForSelector('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode');
   // Варна
-  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
+  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
   // Шумен
-  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
+  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
 
   await page.select('#circumstances_aiskatVehicleTypeCode', '8403');
 
@@ -337,7 +337,7 @@ export async function handleStepSix(page: Page, entry: IEntry, screenshotPath: s
     // Финална част от кеп
     setTimeout(async () => {
       await finalKepPart(wasThereAPreviousEntry);
-    }, 1250);
+    }, 1500);
 
     await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPath);
   }
@@ -348,8 +348,10 @@ export async function finalStepSeven(page: Page, entry: IEntry, screenshotPath: 
   // Изчакване на процеса да потвърди регистрацията и при нужда преминаваме към следващия номер
   await page.locator('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button').click();
 
+  await new Promise((resolve) => setTimeout(resolve, 500));
   // Натискане на бутона Заявки услуга, който вече води към започването на процеса за следващ номер
   await page.locator('#ARTICLE-CONTENT > div:nth-child(1) > div.left-side > button').click();
+
 
   await initiateScreenShot(page, `${entry.id}/mvr-step7.jpeg`, screenshotPath);
 }
