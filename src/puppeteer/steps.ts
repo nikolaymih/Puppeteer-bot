@@ -1,10 +1,10 @@
-import {Page} from 'puppeteer';
+import { Page } from 'puppeteer';
 import path from 'path';
-import {IEntry} from '@src/models/Entry';
-import {initiateScreenShot} from '@src/puppeteer/index';
+import { IEntry } from '@src/models/Entry';
+import { initiateScreenShot } from '@src/puppeteer/index';
 import keySender from 'node-key-sender';
-import {keyboard, Key} from '@nut-tree-fork/nut-js';
-import {windowManager} from 'node-window-manager';
+import { keyboard, Key } from '@nut-tree-fork/nut-js';
+import { windowManager } from 'node-window-manager';
 
 async function sendKeysSequentially() {
   // await keySender.sendKey('down');
@@ -29,9 +29,15 @@ export async function waitForWindowTitleMatch(
 
   while (Date.now() - start < timeoutMs && !result) {
     const win = windowManager.getActiveWindow();
-    console.log(win.getTitle());
-    if (win.getTitle().includes(expectedTitle) || win.getTitle() === '') {
+    console.log(win.getTitle(), expectedTitle)
+    if (win.getTitle().includes(expectedTitle)) {
+      console.log(win.getTitle(), win.getTitle() === expectedTitle,);
       result = true;
+    }
+    if (win.getTitle() === '') {
+      result = true
+      console.log('Active window has no title.');
+
     }
     await new Promise((r) => setTimeout(r, pollIntervalMs));
   }
@@ -64,10 +70,9 @@ async function finalKepPart(wasThereAPreviousEntry: boolean) {
   // Изберете удостоверение
   const result1 = await waitForWindowTitleMatch('Моля, изберете удостоверение за електронно подписване');
   if (!result1) throw new Error('Неуспешно избиране на удостоверение за електронно подписване');
-  await keyboard.type(Key.Down);
-  await keyboard.type(Key.Down);
+  await keyboard.type(Key.Tab);
+  await keyboard.type(Key.Tab);
   await keyboard.type(Key.Enter);
-  await new Promise((resolve) => setTimeout(resolve, 50));
 
   // Следните даннни ще бъдат подписани.
   const result2 = await waitForWindowTitleMatch('');
@@ -98,10 +103,10 @@ async function waitForSearchResult(page: Page, millisecondsToWait: number) {
   await new Promise(resolve => setTimeout(resolve, 500));
 
   const foundSelector = await Promise.race([
-    page.waitForSelector(selector1, {timeout: millisecondsToWait, visible: true})
+    page.waitForSelector(selector1, { timeout: millisecondsToWait, visible: true })
       .then(() => selector1)
       .catch(() => 'break'),
-    page.waitForSelector(selector2, {timeout: millisecondsToWait, visible: true})
+    page.waitForSelector(selector2, { timeout: millisecondsToWait, visible: true })
       .then(() => selector2)
       .catch(() => null),
   ]);
@@ -126,7 +131,7 @@ export async function kepLogin(page: Page) {
         await sendKeysSequentially();
       }, 500);
 
-      await page.waitForNavigation({waitUntil: 'networkidle0'});
+      await page.waitForNavigation({ waitUntil: 'networkidle0' });
 
       await page.goto('https://e-uslugi.mvr.bg/services/applicationProcesses/371');
 
@@ -177,7 +182,7 @@ export async function handleStepOneCompany(page: Page, entry: IEntry, screenshot
       const input = document.querySelector('#applicant_recipientGroup\\.recipient\\.itemEntityBasicData\\.name') as HTMLInputElement;
       return input && input.value !== '';
     },
-    {timeout: 10000}, // default is 30 seconds
+    { timeout: 10000 }, // default is 30 seconds
   );
 
   // Продължи към стъпка 3
@@ -332,7 +337,7 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   // При намерен резултат, затвори модала
   await page.locator('body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-footer > div > div.right-side > button').click();
 
-  await page.waitForSelector('.modal', {hidden: true});
+  await page.waitForSelector('.modal', { hidden: true });
 
   await page.locator('#circumstances_agreementToReceiveERefusal').click();
 
@@ -348,21 +353,19 @@ export async function handleStepSix(page: Page, entry: IEntry, screenshotPath: s
   await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click();
 
   // Изчакване на loader-а да приключи.
-  await page.waitForSelector('.loader-overlay.load', {hidden: true});
+  await page.waitForSelector('.loader-overlay.load', { hidden: true });
 
   // Натисни бутона за смарт карта
   await page.locator('#SIGN_FORM > div.card-body > div.interactive-container > div > div.row.align-items-center > div:nth-child(1) > button').click();
 
   await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPath);
 
-  if (entry.parentEntryId === '1') {
-    // Финална част от кеп
-    setTimeout(async () => {
-      await finalKepPart(wasThereAPreviousEntry);
-    }, 1500);
+  // Финална част от кеп
+  // setTimeout(async () => {
+  await finalKepPart(wasThereAPreviousEntry);
+  // }, 1500);
 
-    await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPath);
-  }
+  await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPath);
 }
 
 export async function finalStepSeven(page: Page, entry: IEntry, screenshotPath: string[]) {
