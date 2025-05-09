@@ -4,6 +4,7 @@ import {IEntry} from '@src/models/Entry';
 import {initiateScreenShot} from '@src/puppeteer/index';
 import keySender from 'node-key-sender';
 import {keyboard, Key} from '@nut-tree-fork/nut-js';
+import {windowManager} from 'node-window-manager';
 
 async function sendKeysSequentially() {
   // await keySender.sendKey('down');
@@ -17,47 +18,68 @@ async function sendKeysSequentially() {
   await new Promise((resolve) => setTimeout(resolve, 50));
 }
 
-async function finalKepPart2() {
-  // Изберете удостоверение
-  await keySender.sendKey('down');
-  await keySender.sendKey('down');
-  await keySender.sendKey('enter');
-  await new Promise((resolve) => setTimeout(resolve, 100));
+export async function waitForWindowTitleMatch(
+  expectedTitle: string,
+  timeoutMs = 25000,
+  pollIntervalMs = 500,
+): Promise<boolean> {
+  // eslint-disable-next-line node/no-unsupported-features/es-syntax
+  const start = Date.now();
+  let result = false;
 
-  // Следните даннни ще бъдат подписани.
-  await keySender.sendKey('enter');
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  while (Date.now() - start < timeoutMs && !result) {
+    const win = windowManager.getActiveWindow();
+    console.log(win.getTitle());
+    if (win.getTitle().includes(expectedTitle) || win.getTitle() === '') {
+      result = true;
+    }
+    await new Promise((r) => setTimeout(r, pollIntervalMs));
+  }
 
-  // Вкарване на пин и натискане на enter
-  const keys = ['1', '9', '0', '8'];
-  await keySender.sendCombination(keys);
-  await new Promise((resolve) => setTimeout(resolve, 100));
-
-  // Натисни Enter след записване на номер-а.
-  // await keySender.sendKey('enter');
-  // await new Promise((resolve) => setTimeout(resolve, 100));
+  return result;
 }
+
+// async function finalKepPart2() {
+//   // Изберете удостоверение
+//   await keySender.sendKey('down');
+//   await keySender.sendKey('down');
+//   await keySender.sendKey('enter');
+//   await new Promise((resolve) => setTimeout(resolve, 100));
+//
+//   // Следните даннни ще бъдат подписани.
+//   await keySender.sendKey('enter');
+//   await new Promise((resolve) => setTimeout(resolve, 100));
+//
+//   // Вкарване на пин и натискане на enter
+//   const keys = ['1', '9', '0', '8'];
+//   await keySender.sendCombination(keys);
+//   await new Promise((resolve) => setTimeout(resolve, 100));
+//
+//   // Натисни Enter след записване на номер-а.
+//   // await keySender.sendKey('enter');
+//   // await new Promise((resolve) => setTimeout(resolve, 100));
+// }
 
 async function finalKepPart(wasThereAPreviousEntry: boolean) {
   // Изберете удостоверение
+  const result1 = await waitForWindowTitleMatch('Моля, изберете удостоверение за електронно подписване');
+  if (!result1) throw new Error('Неуспешно избиране на удостоверение за електронно подписване');
   await keyboard.type(Key.Down);
   await keyboard.type(Key.Down);
   await keyboard.type(Key.Enter);
-  await new Promise((resolve) => setTimeout(resolve, 750));
+  await new Promise((resolve) => setTimeout(resolve, 50));
 
   // Следните даннни ще бъдат подписани.
+  const result2 = await waitForWindowTitleMatch('');
+  if (!result2) throw new Error('Следните даннни ще бъдат подписани.');
   await keyboard.type(Key.Enter);
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await new Promise((resolve) => setTimeout(resolve, 50));
 
   // Вкарване на пин и натискане на enter
   if (!wasThereAPreviousEntry) {
-    const keys = Array(4).fill(Key.Num9);
-    for (const key of keys) {
-      await keyboard.pressKey(key as Key);
-    }
-    for (const key of keys) {
-      await keyboard.releaseKey(key as Key);
-    }
+    const result3 = await waitForWindowTitleMatch('Token Logon');
+    if (!result3) throw new Error('Следните даннни ще бъдат подписани.');
+    await keySender.sendCombination(['1', '9', '0', '8']);
 
     // Натисни Enter след записване на номер-а.
     // await keyboard.type(Key.Enter);
