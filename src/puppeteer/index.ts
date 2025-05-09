@@ -7,7 +7,6 @@ import ExecutorService from '@src/services/ExecutorService';
 import fs from 'fs-extra';
 import {windowManager} from 'node-window-manager';
 import EntryService from '@src/services/EntryService';
-import { log } from 'console';
 
 export async function mainPuppeteer(entry: IEntry) {
   const entriesList: IEntry[] = [entry];
@@ -76,10 +75,7 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
       const puppeteerWindow = windows.find((win) => win.processId === puppeteerPid);
 
       if (puppeteerWindow) {
-        console.log('Found Puppeteer-controlled window:', puppeteerWindow);
         puppeteerWindow.bringToTop(); // Focus the Puppeteer browser window
-      } else {
-        console.log('Could not find Puppeteer window.');
       }
 
       await page.goto(goToLink, {});
@@ -139,7 +135,7 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     console.log('Времето за изпълнение на номера отне: ', numberResult, 'секунди');
 
     const loadingIndicatorResult = ((end - endNumber) / 1000).toFixed(2);
-    console.log('Времето на зареждащия индикатор отне ', loadingIndicatorResult, 'секунди');
+    console.log('Времето на зареждащия индикатор отне: ', loadingIndicatorResult, 'секунди');
 
     await ExecutorService.createExecutor({
       id: entry.id,
