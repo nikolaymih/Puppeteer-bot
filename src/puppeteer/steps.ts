@@ -7,21 +7,19 @@ import { keyboard, Key } from '@nut-tree-fork/nut-js';
 import { windowManager } from 'node-window-manager';
 
 async function sendKeysSequentially() {
-  // await keySender.sendKey('down');
-  // await new Promise((resolve) => setTimeout(resolve, 50));
-
   await keySender.sendKey('enter');
   await new Promise((resolve) => setTimeout(resolve, 150));
 
-  const keys = ['9', '9', '9', '9', 'enter'];
+  const keys = ['1', '9', '0', '8', 'enter'];
   await keySender.sendCombination(keys);
   await new Promise((resolve) => setTimeout(resolve, 50));
 }
 
 export async function waitForWindowTitleMatch(
   expectedTitle: string,
+  step: number,
   timeoutMs = 25000,
-  pollIntervalMs = 500,
+  pollIntervalMs = 100,
 ): Promise<boolean> {
   // eslint-disable-next-line node/no-unsupported-features/es-syntax
   const start = Date.now();
@@ -29,66 +27,48 @@ export async function waitForWindowTitleMatch(
 
   while (Date.now() - start < timeoutMs && !result) {
     const win = windowManager.getActiveWindow();
-    console.log(win.getTitle(), expectedTitle)
-    if (win.getTitle().includes(expectedTitle)) {
-      console.log(win.getTitle(), win.getTitle() === expectedTitle,);
-      result = true;
-    }
-    if (win.getTitle() === '') {
-      result = true
-      console.log('Active window has no title.');
+    console.log(win.getTitle(), expectedTitle);
+    console.log(win.getOwner(), 'owner');
 
+    if (win.getTitle().includes(expectedTitle) && step !== 2) {
+      console.log(win.getTitle(), win.getTitle() === expectedTitle);
+      result = true;
+    } else if ((win.getTitle() === '' && win.path !== '' && win.processId !== 0) && step === 2) {
+      result = true;
+      console.log('Active window has no title.');
     }
-    await new Promise((r) => setTimeout(r, pollIntervalMs));
+
+    if (!result) {
+      await new Promise((r) => setTimeout(r, pollIntervalMs));
+    }
   }
 
   return result;
 }
 
-// async function finalKepPart2() {
-//   // Изберете удостоверение
-//   await keySender.sendKey('down');
-//   await keySender.sendKey('down');
-//   await keySender.sendKey('enter');
-//   await new Promise((resolve) => setTimeout(resolve, 100));
-//
-//   // Следните даннни ще бъдат подписани.
-//   await keySender.sendKey('enter');
-//   await new Promise((resolve) => setTimeout(resolve, 100));
-//
-//   // Вкарване на пин и натискане на enter
-//   const keys = ['1', '9', '0', '8'];
-//   await keySender.sendCombination(keys);
-//   await new Promise((resolve) => setTimeout(resolve, 100));
-//
-//   // Натисни Enter след записване на номер-а.
-//   // await keySender.sendKey('enter');
-//   // await new Promise((resolve) => setTimeout(resolve, 100));
-// }
-
 async function finalKepPart(wasThereAPreviousEntry: boolean) {
   // Изберете удостоверение
-  const result1 = await waitForWindowTitleMatch('Моля, изберете удостоверение за електронно подписване');
+  const result1 = await waitForWindowTitleMatch('Моля, изберете удостоверение за електронно подписване', 1);
   if (!result1) throw new Error('Неуспешно избиране на удостоверение за електронно подписване');
-  await keyboard.type(Key.Tab);
-  await keyboard.type(Key.Tab);
+  await keyboard.type(Key.Down);
+  await keyboard.type(Key.Down);
   await keyboard.type(Key.Enter);
 
   // Следните даннни ще бъдат подписани.
-  const result2 = await waitForWindowTitleMatch('');
+  const result2 = await waitForWindowTitleMatch('', 2);
   if (!result2) throw new Error('Следните даннни ще бъдат подписани.');
   await keyboard.type(Key.Enter);
   await new Promise((resolve) => setTimeout(resolve, 50));
 
   // Вкарване на пин и натискане на enter
   if (!wasThereAPreviousEntry) {
-    const result3 = await waitForWindowTitleMatch('Token Logon');
+    const result3 = await waitForWindowTitleMatch('Token Logon', 3);
     if (!result3) throw new Error('Следните даннни ще бъдат подписани.');
-    await keySender.sendCombination(['1', '9', '0', '8']);
+    await keySender.sendCombination(['1', '9', '9', '9']);
 
     // Натисни Enter след записване на номер-а.
-    await keyboard.type(Key.Enter);
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // await keyboard.type(Key.Enter);
+    // await new Promise((resolve) => setTimeout(resolve, 100));
   }
 }
 
@@ -105,10 +85,10 @@ async function waitForSearchResult(page: Page, millisecondsToWait: number) {
   const foundSelector = await Promise.race([
     page.waitForSelector(selector1, { timeout: millisecondsToWait, visible: true })
       .then(() => selector1)
-      .catch(() => 'break'),
+      .catch(() => selector2),
     page.waitForSelector(selector2, { timeout: millisecondsToWait, visible: true })
       .then(() => selector2)
-      .catch(() => null),
+      .catch(() => selector2),
   ]);
 
   if (foundSelector === selector1) {
@@ -187,11 +167,14 @@ export async function handleStepOneCompany(page: Page, entry: IEntry, screenshot
 
   // Продължи към стъпка 3
   await page.locator('#PAGE-NAV > nav > ul > li:nth-child(3) > div.nav-item-title > button').click();
-  // await page.locator('#PAGE-NAV > nav > ul > li:nth-child(4) > div.nav-item-title > button').click();
 }
 
 export async function handleStepTwo(page: Page, id: string) {
   // Премини от стъпка 3 към 4
+  await page.waitForFunction(() => {
+    const icon = document.querySelector('ul.nav-section li.nav-item:first-child i');
+    return icon && icon.classList.contains('ui-icon-processed');
+  });
   await page.waitForSelector('#ARTICLE-CONTENT > div > fieldset:nth-child(2) > div > div > p');
 
   await initiateScreenShot(page, `${id}/mvr-step2.jpeg`);
@@ -295,9 +278,9 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   // Избери регион за който се отнася регистрацията
   await page.waitForSelector('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode');
   // Варна
-  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
+  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
   // Шумен
-  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
+  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
 
   await page.select('#circumstances_aiskatVehicleTypeCode', '8403');
 
@@ -319,6 +302,7 @@ export async function handleStepFive(page: Page, entry: IEntry) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
     }
 
+    // Тук чакаме 2 минути и половина - 1500 * 100 = 150 000 милисекунди
     if (attempt > 100) {
       result = 'break';
       break;
@@ -349,6 +333,8 @@ export async function handleStepFive(page: Page, entry: IEntry) {
 
 export async function handleStepSix(page: Page, entry: IEntry, screenshotPath: string[], wasThereAPreviousEntry: boolean) {
   // Стъпка 6.
+  // Изчвакаме да се покажи текста Заявител, за да избегнем race condition с долния бутон, защото него го има и в пета стъпка.
+  await page.waitForSelector('#applicantdocumentPreviewSection > div.interactive-container__content > h2');
   // Натисни бутона за подписване
   await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click();
 
@@ -361,9 +347,7 @@ export async function handleStepSix(page: Page, entry: IEntry, screenshotPath: s
   await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPath);
 
   // Финална част от кеп
-  // setTimeout(async () => {
   await finalKepPart(wasThereAPreviousEntry);
-  // }, 1500);
 
   await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPath);
 }

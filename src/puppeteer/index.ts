@@ -58,7 +58,7 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     });
 
     page = await browser.newPage();
-    page.setDefaultTimeout(90000);
+    page.setDefaultTimeout(150000);
   } else {
     // Проверяваме дали има предишен номер за екзекуцията
     // Това е нужно за да прескочим стъпката със избирането на смарт карта
