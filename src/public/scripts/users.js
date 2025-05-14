@@ -90,6 +90,7 @@ function displayFutureEntries() {
           ...entry,
           powerAttorney: entry.powerAttorney || '-',
           parentEntryId: entry.parentEntryId === '1' ? '-' : entry.parentEntryId,
+          startDay: entry.startDay || '-',
         }))
       );
 
