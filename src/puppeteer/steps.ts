@@ -109,7 +109,7 @@ export async function kepLogin(page: Page) {
 
       setTimeout(async () => {
         await sendKeysSequentially();
-      }, 500);
+      }, 1000);
 
       await page.waitForNavigation({ waitUntil: 'networkidle0' });
 
@@ -331,7 +331,7 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-secondary').click();
 }
 
-export async function handleStepSix(page: Page, entry: IEntry, screenshotPath: string[], wasThereAPreviousEntry: boolean) {
+export async function handleStepSix(page: Page, wasThereAPreviousEntry: boolean) {
   // Стъпка 6.
   // Изчвакаме да се покажи текста Заявител, за да избегнем race condition с долния бутон, защото него го има и в пета стъпка.
   await page.waitForSelector('#applicantdocumentPreviewSection > div.interactive-container__content > h2');
@@ -344,12 +344,8 @@ export async function handleStepSix(page: Page, entry: IEntry, screenshotPath: s
   // Натисни бутона за смарт карта
   await page.locator('#SIGN_FORM > div.card-body > div.interactive-container > div > div.row.align-items-center > div:nth-child(1) > button').click();
 
-  await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPath);
-
   // Финална част от кеп
   await finalKepPart(wasThereAPreviousEntry);
-
-  await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPath);
 }
 
 export async function finalStepSeven(page: Page, entry: IEntry, screenshotPath: string[]) {

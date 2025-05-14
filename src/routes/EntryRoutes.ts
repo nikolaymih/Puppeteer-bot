@@ -25,8 +25,8 @@ async function add(req: IReq<IEntry>, res: IRes) {
   const entries = await EntryService.addOne(enrichedEntry);
 
   // 1 mean top level entry. The first number to start for the day.
-  if (enrichedEntry.parentEntryId === '1') {
-    const task = scheduleTask(entry.startDay, async () => {
+  if (enrichedEntry.parentEntryId === '1' && enrichedEntry.startDay) {
+    const task = scheduleTask(enrichedEntry.startDay, async () => {
       await mainPuppeteer(enrichedEntry);
     });
     scheduledTasks.set(id, task);

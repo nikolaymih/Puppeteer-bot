@@ -111,9 +111,12 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
 
     const startNumber = Date.now();
 
-    await handleStepSix(page, entry, screenshotPaths, wasThereAPreviousEntry);
+    await handleStepSix(page, wasThereAPreviousEntry);
 
     const endNumber = Date.now();
+    const numberResult = ((endNumber - startNumber) / 1000).toFixed(2);
+    console.log('Времето за запазване на номера отне: ', numberResult, 'секунди');
+    await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPaths);
 
     isThereNextEntry 
       ? await finalStepSeven(page, entry, screenshotPaths)
@@ -126,13 +129,10 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     console.log('Времето за пълното изпълнение отне: ', result, 'секунди');
 
     const reachingData = ((startFillingData - start) / 1000).toFixed(2);
-    console.log('Времето до отварянето на сайта отне: ', reachingData, 'секунди');
+    console.log('Времето до стигане на първото първата страница за попълване на данните отне: ', reachingData, 'секунди');
 
     const fillingResult = ((startNumber - startFillingData) / 1000).toFixed(2);
     console.log('Времето на попълневането на данните отне: ', fillingResult, 'секунди');
-
-    const numberResult = ((endNumber - startNumber) / 1000).toFixed(2);
-    console.log('Времето за изпълнение на номера отне: ', numberResult, 'секунди');
 
     const loadingIndicatorResult = ((end - endNumber) / 1000).toFixed(2);
     console.log('Времето на зареждащия индикатор отне: ', loadingIndicatorResult, 'секунди');

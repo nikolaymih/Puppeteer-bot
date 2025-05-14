@@ -60,6 +60,9 @@ async function rescheduleExecutions(): Promise<void> {
   }
 
   futureExecutions.forEach((entry) => {
+    if (!entry.startDay) {
+      return;
+    }
     scheduleTask(entry.startDay, async () => {
       await mainPuppeteer(entry);
     });
