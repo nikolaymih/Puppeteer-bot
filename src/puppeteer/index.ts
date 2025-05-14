@@ -116,11 +116,10 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     const endNumber = Date.now();
     const numberResult = ((endNumber - startNumber) / 1000).toFixed(2);
     console.log('Времето за запазване на номера отне: ', numberResult, 'секунди');
-    await initiateScreenShot(page, `${entry.id}/mvr-step61.jpeg`, screenshotPaths);
 
     isThereNextEntry 
       ? await finalStepSeven(page, entry, screenshotPaths)
-      : await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 60000});
+      : await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 150000});
 
     await initiateScreenShot(page, `${entry.id}/mvr-step6.jpeg`);
 
@@ -166,7 +165,7 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
 
       // Изчакване на потребителя сам да завърши запазването на номера.
       // тук има проблем, ако долният не се получи и се чупи
-      await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button');
+      await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 150000});
     }
     return page;
   }

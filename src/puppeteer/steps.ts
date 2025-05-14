@@ -10,7 +10,7 @@ async function sendKeysSequentially() {
   await keySender.sendKey('enter');
   await new Promise((resolve) => setTimeout(resolve, 150));
 
-  const keys = ['1', '9', '0', '8', 'enter'];
+  const keys = ['9', '9', '9', '9', 'enter'];
   await keySender.sendCombination(keys);
   await new Promise((resolve) => setTimeout(resolve, 50));
 }
@@ -50,8 +50,6 @@ async function finalKepPart(wasThereAPreviousEntry: boolean) {
   // Изберете удостоверение
   const result1 = await waitForWindowTitleMatch('Моля, изберете удостоверение за електронно подписване', 1);
   if (!result1) throw new Error('Неуспешно избиране на удостоверение за електронно подписване');
-  await keyboard.type(Key.Down);
-  await keyboard.type(Key.Down);
   await keyboard.type(Key.Enter);
 
   // Следните даннни ще бъдат подписани.
@@ -64,11 +62,11 @@ async function finalKepPart(wasThereAPreviousEntry: boolean) {
   if (!wasThereAPreviousEntry) {
     const result3 = await waitForWindowTitleMatch('Token Logon', 3);
     if (!result3) throw new Error('Следните даннни ще бъдат подписани.');
-    await keySender.sendCombination(['1', '9', '9', '9']);
+    await keySender.sendCombination(['9', '9', '9', '9']);
 
     // Натисни Enter след записване на номер-а.
-    // await keyboard.type(Key.Enter);
-    // await new Promise((resolve) => setTimeout(resolve, 100));
+    await keyboard.type(Key.Enter);
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 }
 
@@ -278,9 +276,9 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   // Избери регион за който се отнася регистрацията
   await page.waitForSelector('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode');
   // Варна
-  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
+  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
   // Шумен
-  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
+  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
 
   await page.select('#circumstances_aiskatVehicleTypeCode', '8403');
 
@@ -349,12 +347,14 @@ export async function handleStepSix(page: Page, wasThereAPreviousEntry: boolean)
 }
 
 export async function finalStepSeven(page: Page, entry: IEntry, screenshotPath: string[]) {
-  // Стъпке 7
+  // Стъпкa 7
   // Изчакване на процеса да потвърди регистрацията и при нужда преминаваме към следващия номер
+  await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 150000})
   await page.locator('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button').click();
 
   await new Promise((resolve) => setTimeout(resolve, 500));
   // Натискане на бутона Заявки услуга, който вече води към започването на процеса за следващ номер
+  await page.waitForSelector('#servicename > h1');
   await page.locator('#ARTICLE-CONTENT > div:nth-child(1) > div.left-side > button').click();
 
 
