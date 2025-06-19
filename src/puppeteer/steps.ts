@@ -1,24 +1,41 @@
-import { Page } from 'puppeteer';
+import {Page} from 'puppeteer';
 import path from 'path';
-import { IEntry } from '@src/models/Entry';
-import { initiateScreenShot } from '@src/puppeteer/index';
+import {IEntry} from '@src/models/Entry';
+import {initiateScreenShot} from '@src/puppeteer/index';
 import keySender from 'node-key-sender';
-import { keyboard, Key } from '@nut-tree-fork/nut-js';
-import { windowManager } from 'node-window-manager';
+import {keyboard, Key} from '@nut-tree-fork/nut-js';
+import {windowManager} from 'node-window-manager';
 
 async function sendKeysSequentially() {
   await keySender.sendKey('enter');
   await new Promise((resolve) => setTimeout(resolve, 150));
 
-  const keys = ['9', '9', '9', '9', 'enter'];
+  const keys = ['1', '9', '0', '8'];
   await keySender.sendCombination(keys);
   await new Promise((resolve) => setTimeout(resolve, 50));
+}
+
+function getFirstBissWindowsFocused(expectedTitle: string) {
+  const allWindows = windowManager.getWindows();
+
+  for (const win of allWindows) {
+    const title = win.getTitle();
+    const processId = win.processId;
+    const path = win.path;
+
+    console.log(`[${processId}] ${title} - ${path}`);
+
+    if (title.includes(expectedTitle)) {
+      win.bringToTop(); // Focuses it
+      break;
+    }
+  }
 }
 
 export async function waitForWindowTitleMatch(
   expectedTitle: string,
   step: number,
-  timeoutMs = 25000,
+  timeoutMs = 45000,
   pollIntervalMs = 100,
 ): Promise<boolean> {
   // eslint-disable-next-line node/no-unsupported-features/es-syntax
@@ -26,9 +43,12 @@ export async function waitForWindowTitleMatch(
   let result = false;
 
   while (Date.now() - start < timeoutMs && !result) {
+    if (step === 1) {
+      getFirstBissWindowsFocused(expectedTitle);
+    }
+
     const win = windowManager.getActiveWindow();
-    console.log(win.getTitle(), expectedTitle);
-    console.log(win.getOwner(), 'owner');
+    console.log(win.getTitle(), expectedTitle, win.processId);
 
     if (win.getTitle().includes(expectedTitle) && step !== 2) {
       console.log(win.getTitle(), win.getTitle() === expectedTitle);
@@ -48,8 +68,11 @@ export async function waitForWindowTitleMatch(
 
 async function finalKepPart(wasThereAPreviousEntry: boolean) {
   // Изберете удостоверение
+  console.log(windowManager.getWindows());
   const result1 = await waitForWindowTitleMatch('Моля, изберете удостоверение за електронно подписване', 1);
   if (!result1) throw new Error('Неуспешно избиране на удостоверение за електронно подписване');
+  await keyboard.type(Key.Down);
+  await keyboard.type(Key.Down);
   await keyboard.type(Key.Enter);
 
   // Следните даннни ще бъдат подписани.
@@ -65,8 +88,8 @@ async function finalKepPart(wasThereAPreviousEntry: boolean) {
     await keySender.sendCombination(['9', '9', '9', '9']);
 
     // Натисни Enter след записване на номер-а.
-    await keyboard.type(Key.Enter);
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // await keyboard.type(Key.Enter);
+    // await new Promise((resolve) => setTimeout(resolve, 200));
   }
 }
 
@@ -81,10 +104,10 @@ async function waitForSearchResult(page: Page, millisecondsToWait: number) {
   await new Promise(resolve => setTimeout(resolve, 500));
 
   const foundSelector = await Promise.race([
-    page.waitForSelector(selector1, { timeout: millisecondsToWait, visible: true })
+    page.waitForSelector(selector1, {timeout: millisecondsToWait, visible: true})
       .then(() => selector1)
       .catch(() => selector2),
-    page.waitForSelector(selector2, { timeout: millisecondsToWait, visible: true })
+    page.waitForSelector(selector2, {timeout: millisecondsToWait, visible: true})
       .then(() => selector2)
       .catch(() => selector2),
   ]);
@@ -107,9 +130,9 @@ export async function kepLogin(page: Page) {
 
       setTimeout(async () => {
         await sendKeysSequentially();
-      }, 1000);
+      }, 3000);
 
-      await page.waitForNavigation({ waitUntil: 'networkidle0' });
+      await page.waitForNavigation({waitUntil: 'networkidle0'});
 
       await page.goto('https://e-uslugi.mvr.bg/services/applicationProcesses/371');
 
@@ -130,8 +153,10 @@ export async function handleStepOnePerson(page: Page, entry: IEntry, screenshotP
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.names\\.last').fill(entry.lastName);
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identifier\\.item').fill(entry.securityNumber);
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identityNumber').fill(entry.documentNumber);
+  await page.waitForSelector('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identitityIssueDate', {timeout: 3000});
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identitityIssueDate').fill(entry.issuedOn);
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identityIssuer').fill(entry.issuer);
+
 
   await initiateScreenShot(page, `${entry.id}/mvr-step1.jpeg`, screenshotPath);
 
@@ -160,7 +185,7 @@ export async function handleStepOneCompany(page: Page, entry: IEntry, screenshot
       const input = document.querySelector('#applicant_recipientGroup\\.recipient\\.itemEntityBasicData\\.name') as HTMLInputElement;
       return input && input.value !== '';
     },
-    { timeout: 10000 }, // default is 30 seconds
+    {timeout: 10000}, // default is 30 seconds
   );
 
   // Продължи към стъпка 3
@@ -169,6 +194,8 @@ export async function handleStepOneCompany(page: Page, entry: IEntry, screenshot
 
 export async function handleStepTwo(page: Page, id: string) {
   // Премини от стъпка 3 към 4
+  // Изчакване на loader-а да приключи.
+  await page.waitForSelector('.loader-overlay.load', {hidden: true});
   await page.waitForFunction(() => {
     const icon = document.querySelector('ul.nav-section li.nav-item:first-child i');
     return icon && icon.classList.contains('ui-icon-processed');
@@ -181,6 +208,8 @@ export async function handleStepTwo(page: Page, id: string) {
 }
 
 export async function handleStepThree(page: Page, id: string) {
+  // Изчакване на loader-а да приключи.
+  await page.waitForSelector('.loader-overlay.load', {hidden: true});
   await page.waitForSelector('#ARTICLE-CONTENT > div > div.ui-form.ui-form--input > fieldset:nth-child(1) > legend > h3');
   await page.waitForSelector('input[type="checkbox"]');
   const checkboxes = await page.$$('input[type="checkbox"]');
@@ -276,9 +305,9 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   // Избери регион за който се отнася регистрацията
   await page.waitForSelector('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode');
   // Варна
-  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
+  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
   // Шумен
-  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
+  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
 
   await page.select('#circumstances_aiskatVehicleTypeCode', '8403');
 
@@ -319,11 +348,12 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   // При намерен резултат, затвори модала
   await page.locator('body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-footer > div > div.right-side > button').click();
 
-  await page.waitForSelector('.modal', { hidden: true });
+  await page.waitForSelector('.modal', {hidden: true});
 
   await page.locator('#circumstances_agreementToReceiveERefusal').click();
 
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  // Изчакване на loader-а да приключи.
+  await page.waitForSelector('.loader-overlay.load', {hidden: true});
 
   // Отиди към последна стъпка
   await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-secondary').click();
@@ -337,7 +367,7 @@ export async function handleStepSix(page: Page, wasThereAPreviousEntry: boolean)
   await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click();
 
   // Изчакване на loader-а да приключи.
-  await page.waitForSelector('.loader-overlay.load', { hidden: true });
+  await page.waitForSelector('.loader-overlay.load', {hidden: true});
 
   // Натисни бутона за смарт карта
   await page.locator('#SIGN_FORM > div.card-body > div.interactive-container > div > div.row.align-items-center > div:nth-child(1) > button').click();
@@ -349,14 +379,13 @@ export async function handleStepSix(page: Page, wasThereAPreviousEntry: boolean)
 export async function finalStepSeven(page: Page, entry: IEntry, screenshotPath: string[]) {
   // Стъпкa 7
   // Изчакване на процеса да потвърди регистрацията и при нужда преминаваме към следващия номер
-  await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 150000})
+  await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 250000});
   await page.locator('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button').click();
 
   await new Promise((resolve) => setTimeout(resolve, 500));
   // Натискане на бутона Заявки услуга, който вече води към започването на процеса за следващ номер
   await page.waitForSelector('#servicename > h1');
   await page.locator('#ARTICLE-CONTENT > div:nth-child(1) > div.left-side > button').click();
-
 
   await initiateScreenShot(page, `${entry.id}/mvr-step7.jpeg`, screenshotPath);
 }

@@ -6,7 +6,7 @@ import server from './server';
 
 // **** Run **** //
 
-const SERVER_START_MSG = ('Express server started on port: ' + 
+const SERVER_START_MSG = ('Програмата стартира на порт: ' +
   EnvVars.Port.toString());
 
 server.listen(EnvVars.Port, () => logger.info(SERVER_START_MSG));

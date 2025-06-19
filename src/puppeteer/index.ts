@@ -94,9 +94,6 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
 
     const startFillingData = Date.now();
 
-    // Да проверим дали имаме нужда от този код, който е свързан с изчакването на стартирането на номер 2
-    // await page.waitForSelector('#ARTICLE-CONTENT > div.alert.alert-info > button');
-
     entry.representative === RepresentativeValues.PERSONAL
       ? await handleStepOnePerson(page, entry, screenshotPaths)
       : await handleStepOneCompany(page, entry, screenshotPaths);
@@ -121,8 +118,6 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
       ? await finalStepSeven(page, entry, screenshotPaths)
       : await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 150000});
 
-    await initiateScreenShot(page, `${entry.id}/mvr-step6.jpeg`);
-
     const end = Date.now();
     const result = ((end - start) / 1000).toFixed(2);
     console.log('Времето за пълното изпълнение отне: ', result, 'секунди');
@@ -142,8 +137,10 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
       entryId: entry.id,
       isSuccessful: true,
       errorMessage: '',
-      executionTime: result,
+      executionTime: numberResult,
     });
+
+    await initiateScreenShot(page, `${entry.id}/mvr-step6.jpeg`);
 
     return page;
 
@@ -161,11 +158,12 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
         'Неуспешно изпълнение на програмата. Програмата минава в ръчен режим за този номер: ',
         entry.regNumber,
         ' Моля проверете логовете на http://localhost:3000/users',
+        'error: ', error,
       );
 
       // Изчакване на потребителя сам да завърши запазването на номера.
       // тук има проблем, ако долният не се получи и се чупи
-      await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 150000});
+      await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 250000});
     }
     return page;
   }
