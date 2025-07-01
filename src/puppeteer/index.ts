@@ -31,9 +31,8 @@ export async function mainPuppeteer(entry: IEntry) {
     const isThereNextEntry = currentEntryIndex < entriesList.length - 1;
     if (page) {
       await executeEntry(entry1, isThereNextEntry, page);
-      return;
+      continue;
     }
-
     const pageFromExecution = await executeEntry(entry1, isThereNextEntry);
     if (pageFromExecution) {
       page = pageFromExecution;
@@ -114,9 +113,9 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     const numberResult = ((endNumber - startNumber) / 1000).toFixed(2);
     console.log('Времето за запазване на номера отне: ', numberResult, 'секунди');
 
-    isThereNextEntry 
-      ? await finalStepSeven(page, entry, screenshotPaths)
-      : await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 150000});
+    // isThereNextEntry
+    //   ? await finalStepSeven(page, entry, screenshotPaths)
+    //   : await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 150000});
 
     const end = Date.now();
     const result = ((end - start) / 1000).toFixed(2);
