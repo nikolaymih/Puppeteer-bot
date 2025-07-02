@@ -58,7 +58,7 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     });
 
     page = await browser.newPage();
-    page.setDefaultTimeout(150000);
+    page.setDefaultTimeout(1500000);
   } else {
     // Проверяваме дали има предишен номер за екзекуцията
     // Това е нужно за да прескочим стъпката със избирането на смарт карта
@@ -116,7 +116,7 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
 
     isThereNextEntry 
       ? await finalStepSeven(page, entry, screenshotPaths)
-      : await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 150000});
+      : await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 1500000});
 
     const end = Date.now();
     const result = ((end - start) / 1000).toFixed(2);

@@ -10,9 +10,12 @@ async function sendKeysSequentially() {
   await keySender.sendKey('enter');
   await new Promise((resolve) => setTimeout(resolve, 150));
 
-  const keys = ['1', '9', '0', '8'];
+  const keys = ['9', '9', '9', '9'];
   await keySender.sendCombination(keys);
   await new Promise((resolve) => setTimeout(resolve, 50));
+
+  await keySender.sendKey('enter');
+  await new Promise((resolve) => setTimeout(resolve, 150));
 }
 
 function getFirstBissWindowsFocused(expectedTitle: string) {
@@ -88,8 +91,8 @@ async function finalKepPart(wasThereAPreviousEntry: boolean) {
     await keySender.sendCombination(['9', '9', '9', '9']);
 
     // Натисни Enter след записване на номер-а.
-    // await keyboard.type(Key.Enter);
-    // await new Promise((resolve) => setTimeout(resolve, 200));
+    await keyboard.type(Key.Enter);
+    await new Promise((resolve) => setTimeout(resolve, 200));
   }
 }
 
@@ -305,9 +308,9 @@ export async function handleStepFive(page: Page, entry: IEntry) {
   // Избери регион за който се отнася регистрацията
   await page.waitForSelector('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode');
   // Варна
-  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
+  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
   // Шумен
-  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
+  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
 
   await page.select('#circumstances_aiskatVehicleTypeCode', '8403');
 
