@@ -120,7 +120,6 @@ function showOldEntries() {
     .get('/api/executors/all')
     .then(resp => resp.json())
     .then(resp => {
-      console.log(resp)
       var allExecutorsTemplate = document.getElementById('all-еxecutors-template'),
         allExecutorsTemplateHtml = allExecutorsTemplate.innerHTML,
         template = Handlebars.compile(allExecutorsTemplateHtml);

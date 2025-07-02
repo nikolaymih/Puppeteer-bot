@@ -31,9 +31,8 @@ export async function mainPuppeteer(entry: IEntry) {
     const isThereNextEntry = currentEntryIndex < entriesList.length - 1;
     if (page) {
       await executeEntry(entry1, isThereNextEntry, page);
-      return;
+      continue;
     }
-
     const pageFromExecution = await executeEntry(entry1, isThereNextEntry);
     if (pageFromExecution) {
       page = pageFromExecution;

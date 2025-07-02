@@ -23,10 +23,6 @@ function getFirstBissWindowsFocused(expectedTitle: string) {
 
   for (const win of allWindows) {
     const title = win.getTitle();
-    const processId = win.processId;
-    const path = win.path;
-
-    console.log(`[${processId}] ${title} - ${path}`);
 
     if (title.includes(expectedTitle)) {
       win.bringToTop(); // Focuses it
@@ -51,14 +47,11 @@ export async function waitForWindowTitleMatch(
     }
 
     const win = windowManager.getActiveWindow();
-    console.log(win.getTitle(), expectedTitle, win.processId);
 
     if (win.getTitle().includes(expectedTitle) && step !== 2) {
-      console.log(win.getTitle(), win.getTitle() === expectedTitle);
       result = true;
     } else if ((win.getTitle() === '' && win.path !== '' && win.processId !== 0) && step === 2) {
       result = true;
-      console.log('Active window has no title.');
     }
 
     if (!result) {
@@ -71,7 +64,6 @@ export async function waitForWindowTitleMatch(
 
 async function finalKepPart(wasThereAPreviousEntry: boolean) {
   // Изберете удостоверение
-  console.log(windowManager.getWindows());
   const result1 = await waitForWindowTitleMatch('Моля, изберете удостоверение за електронно подписване', 1);
   if (!result1) throw new Error('Неуспешно избиране на удостоверение за електронно подписване');
   await keyboard.type(Key.Down);
@@ -80,6 +72,7 @@ async function finalKepPart(wasThereAPreviousEntry: boolean) {
 
   // Следните даннни ще бъдат подписани.
   const result2 = await waitForWindowTitleMatch('', 2);
+
   if (!result2) throw new Error('Следните даннни ще бъдат подписани.');
   await keyboard.type(Key.Enter);
   await new Promise((resolve) => setTimeout(resolve, 50));
@@ -88,7 +81,10 @@ async function finalKepPart(wasThereAPreviousEntry: boolean) {
   if (!wasThereAPreviousEntry) {
     const result3 = await waitForWindowTitleMatch('Token Logon', 3);
     if (!result3) throw new Error('Следните даннни ще бъдат подписани.');
-    await keySender.sendCombination(['9', '9', '9', '9']);
+    await keyboard.type(Key.Num9);
+    await keyboard.type(Key.Num9);
+    await keyboard.type(Key.Num9);
+    await keyboard.type(Key.Num9);
 
     // Натисни Enter след записване на номер-а.
     await keyboard.type(Key.Enter);
@@ -104,7 +100,7 @@ async function waitForSearchResult(page: Page, millisecondsToWait: number) {
   const selector2 = 'body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-body > div:nth-child(3)';
 
   // Add a small delay to ensure DOM updates
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, 400));
 
   const foundSelector = await Promise.race([
     page.waitForSelector(selector1, {timeout: millisecondsToWait, visible: true})
@@ -157,9 +153,22 @@ export async function handleStepOnePerson(page: Page, entry: IEntry, screenshotP
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identifier\\.item').fill(entry.securityNumber);
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identityNumber').fill(entry.documentNumber);
   await page.waitForSelector('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identitityIssueDate', {timeout: 3000});
+  // After filling
   await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identitityIssueDate').fill(entry.issuedOn);
-  await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identityIssuer').fill(entry.issuer);
 
+  // Verify the value was set correctly
+  const dateValue = await page.evaluate(() => {
+    const input = document.querySelector('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identitityIssueDate') as HTMLInputElement;
+    return input?.value;
+  });
+
+  // If not set correctly, try again
+  if (dateValue !== entry.issuedOn) {
+    console.log(`Date field not filled correctly. Expected: ${entry.issuedOn}, Got: ${dateValue}`);
+    // Try again or use alternative approach
+    await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identitityIssueDate').fill(entry.issuedOn);
+  }
+  await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identityIssuer').fill(entry.issuer);
 
   await initiateScreenShot(page, `${entry.id}/mvr-step1.jpeg`, screenshotPath);
 
@@ -329,7 +338,7 @@ export async function handleStepFive(page: Page, entry: IEntry) {
 
   while (result !== 'break' && result !== true) {
     if (attempt > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     // Тук чакаме 2 минути и половина - 1500 * 100 = 150 000 милисекунди
@@ -364,7 +373,8 @@ export async function handleStepFive(page: Page, entry: IEntry) {
 
 export async function handleStepSix(page: Page, wasThereAPreviousEntry: boolean) {
   // Стъпка 6.
-  // Изчвакаме да се покажи текста Заявител, за да избегнем race condition с долния бутон, защото него го има и в пета стъпка.
+  await page.waitForSelector('.modal', {hidden: true});
+  // Изчвакаме да се покаже текста Заявител, за да избегнем race condition с долния бутон, защото него го има и в пета стъпка.
   await page.waitForSelector('#applicantdocumentPreviewSection > div.interactive-container__content > h2');
   // Натисни бутона за подписване
   await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-primary').click();

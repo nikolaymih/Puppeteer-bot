@@ -25,7 +25,6 @@ async function getAll(): Promise<IEntry[][]> {
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const child = searchForChild(futureEntries, currentId);
-      console.log(child, currentId);
       if (!child) break;
 
       groupedEntries[index].push(child);
@@ -33,7 +32,6 @@ async function getAll(): Promise<IEntry[][]> {
     }
   });
 
-  console.log(groupedEntries);
 
   return groupedEntries;
 }
