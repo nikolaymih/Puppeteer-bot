@@ -8,7 +8,6 @@ import path from 'path';
 import helmet from 'helmet';
 import express, {Request, Response, NextFunction} from 'express';
 import logger from 'jet-logger';
-import puppeteer, {Page} from 'puppeteer';
 import 'express-async-errors';
 
 import BaseRouter from '@src/routes';
@@ -18,7 +17,6 @@ import EnvVars from '@src/common/EnvVars';
 import HttpStatusCodes from '@src/common/HttpStatusCodes';
 import RouteError from '@src/common/RouteError';
 import {NodeEnvs} from '@src/common/misc';
-import {handleStepFour, handleStepThree, handleStepOneCompany, handleStepTwo, handleStepFive} from '@src/puppeteer/steps';
 import {mainPuppeteer} from '@src/puppeteer';
 
 // **** Variables **** //
@@ -88,15 +86,16 @@ app.get('/', async (_: Request, res: Response) => {
     issuer: 'МВР ВАРНА',
     bullstat: '231321',
     regNumber: 'B9699НТ',
-    parentEntryId: 'Индивидуален',
+    parentEntryId: '1',
     startDay: '2024-11-24 18:02:30',
     purchaseDoc: 'test',
     powerAttorney: 'test2',
+    isPrimaryNum: false,
   };
 
   await mainPuppeteer(entry);
 
-  res.status(200).status(200).send('Тоз изпълнение брат!');
+  res.status(200).end();
 });
 
 

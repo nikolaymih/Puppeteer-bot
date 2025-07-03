@@ -5,12 +5,13 @@ import {initiateScreenShot} from '@src/puppeteer/index';
 import keySender from 'node-key-sender';
 import {keyboard, Key} from '@nut-tree-fork/nut-js';
 import {windowManager} from 'node-window-manager';
+import {LoggerModes} from 'jet-logger';
 
 async function sendKeysSequentially() {
   await keySender.sendKey('enter');
   await new Promise((resolve) => setTimeout(resolve, 150));
 
-  const keys = ['9', '9', '9', '9'];
+  const keys = ['1', '9', '0', '8'];
   await keySender.sendCombination(keys);
   await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -312,14 +313,14 @@ export async function handleStepFour(page: Page, entry: IEntry) {
   await page.locator('#PAGE-NAV > nav > ul > li:nth-child(2) > div.nav-item-title > button').click();
 }
 
-export async function handleStepFive(page: Page, entry: IEntry) {
+export async function handleStepFive(page: Page, entry: IEntry): Promise<boolean> {
   // Стъпка 2.
   // Избери регион за който се отнася регистрацията
   await page.waitForSelector('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode');
   // Варна
-  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
+  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '365');
   // Шумен
-  // await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
+  await page.select('#circumstances_issuingPoliceDepartment\\.policeDepartmentCode', '372');
 
   await page.select('#circumstances_aiskatVehicleTypeCode', '8403');
 
@@ -341,8 +342,14 @@ export async function handleStepFive(page: Page, entry: IEntry) {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    // Тук чакаме 2 минути и половина - 1500 * 100 = 150 000 милисекунди
-    if (attempt > 100) {
+    // Това е случай, когато работим с втория номер и той вече е взех, не искаме да чакаме повече от 5 секунд
+    if (attempt > 3 && !entry.isPrimaryNum) {
+      result = 'logout';
+      break;
+    }
+
+    // Тук чакаме 2 минути и половина - 500 * 200 = 125 000 милисекунди - 125 секунди
+    if (attempt > 250) {
       result = 'break';
       break;
     }
@@ -355,11 +362,19 @@ export async function handleStepFive(page: Page, entry: IEntry) {
     throw new Error(`Резултатът не успя да бъде намерен в рамките на ${millisecondsToWait / 1000} секунди`);
   }
 
+  // Ако не успяваме да намерим резултати за някой от следващите номера или първият, който е взех за да забърза апа
+  // трябв да излезем от сесията
+  if (result === 'logout') {
+    await page.locator('body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-header > button').click();
+    await page.waitForSelector('.modal', {hidden: true});
+    await handleLogoutFromSession(page);
+    return false;
+  }
+
   await initiateScreenShot(page, `${entry.id}/mvr-step52.jpeg`);
 
   // При намерен резултат, затвори модала
   await page.locator('body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-footer > div > div.right-side > button').click();
-
   await page.waitForSelector('.modal', {hidden: true});
 
   await page.locator('#circumstances_agreementToReceiveERefusal').click();
@@ -369,6 +384,8 @@ export async function handleStepFive(page: Page, entry: IEntry) {
 
   // Отиди към последна стъпка
   await page.locator('#ARTICLE-CONTENT > div > div > div.right-side > button.btn.btn-secondary').click();
+
+  return true;
 }
 
 export async function handleStepSix(page: Page, wasThereAPreviousEntry: boolean) {
@@ -392,7 +409,8 @@ export async function handleStepSix(page: Page, wasThereAPreviousEntry: boolean)
 export async function finalStepSeven(page: Page, entry: IEntry, screenshotPath: string[]) {
   // Стъпкa 7
   // Изчакване на процеса да потвърди регистрацията и при нужда преминаваме към следващия номер
-  await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 250000});
+  await page.waitForSelector('.modal', {hidden: true});
+  await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 300000});
   await page.locator('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button').click();
 
   await new Promise((resolve) => setTimeout(resolve, 500));
@@ -401,4 +419,11 @@ export async function finalStepSeven(page: Page, entry: IEntry, screenshotPath: 
   await page.locator('#ARTICLE-CONTENT > div:nth-child(1) > div.left-side > button').click();
 
   await initiateScreenShot(page, `${entry.id}/mvr-step7.jpeg`, screenshotPath);
+}
+
+export async function handleLogoutFromSession(page: Page) {
+  await page.locator('#ARTICLE-CONTENT > div > div > div.left-side > button').click();
+
+  await page.waitForSelector('body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-header');
+  await page.locator('#BTN_MODAL_OK').click();
 }

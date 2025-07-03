@@ -86,7 +86,7 @@
                 <input
                         name="securityNumber"
                         id="securityNumber"
-                        type="Number"
+                        type="text"
                         class="form-control mt-1"
                 />
             </div>
@@ -183,6 +183,11 @@
             </label>
         </div>
 
+        <div class="mb-3">
+            <input type="checkbox" id="primaryNum" name="primaryNum" value="true">
+            <label for="primaryNum">Основен номер</label><br>
+        </div>
+
         <script>
           $('#startDay').datetimepicker({
             uiLibrary: 'bootstrap5',
@@ -202,6 +207,14 @@
                 Създай
             </button>
         </div>
+    </form>
+    <form id="submit-dummy-form" class="mb-4">
+        <button
+                id="add-dummy-btn"
+                class="btn btn-success mt-2"
+        >
+            Тестово пускане
+        </button>
     </form>
 </div>
 
@@ -239,6 +252,7 @@
                             <div><b>Регистрационен номер:</b> {{regNumber}}</div>
                             <div><b>Име на документ за придобиване:</b> {{purchaseDoc}}</div>
                             <div><b>Име на документ за пълномощно:</b> {{powerAttorney}}</div>
+                            <div><b>Основен номер:</b> {{isPrimaryNum}}</div>
                             <div><b>Дата на стартиране:</b> {{startDay}}</div>
                             <button
                                     class="btn btn-danger delete-user-btn"
@@ -289,6 +303,7 @@
 
                     <div><b>Име на документ за придобиване:</b> {{purchaseDoc}}</div>
                     <div><b>Име на документ за пълномощно:</b> {{powerAttorney}}</div>
+                    <div><b>Основен номер:</b> {{isPrimaryNum}}</div>
                     <div><b>Дата на стартиране:</b> {{startDay}}</div>
                 </div>
             </div>
