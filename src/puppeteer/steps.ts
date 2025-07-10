@@ -342,7 +342,7 @@ export async function handleStepFive(page: Page, entry: IEntry) {
     }
 
     // Тук чакаме 2 минути и половина - 1500 * 100 = 150 000 милисекунди
-    if (attempt > 100) {
+    if (attempt > 200) {
       result = 'break';
       break;
     }
