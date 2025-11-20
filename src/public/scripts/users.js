@@ -1,7 +1,7 @@
 // **** Variables **** //
 
-Handlebars.registerHelper('multiply', function(num1, num2) {
-    return num1 * num2;
+Handlebars.registerHelper('multiply', function (num1, num2) {
+  return num1 * num2;
 });
 
 Handlebars.registerHelper('equals', function (a, b, options) {
@@ -91,11 +91,12 @@ function displayFutureEntries() {
           powerAttorney: entry.powerAttorney || '-',
           parentEntryId: entry.parentEntryId === '1' ? '-' : entry.parentEntryId,
           startDay: entry.startDay || '-',
-        }))
+          isPrimaryNum: entry.isPrimaryNum ? 'Да' : 'Не',
+        })),
       );
 
       allEntriesAnchor.innerHTML = template({
-        entries: mappedEntries
+        entries: mappedEntries,
       });
 
       // Second template for select options - flatten the array for select
@@ -110,6 +111,7 @@ function displayFutureEntries() {
         entries: flatEntries.map(entry => ({
           ...entry,
           powerAttorney: entry.powerAttorney || '-',
+          isPrimaryNum: entry.isPrimaryNum ? 'Да' : 'Не',
         })),
       });
     });
@@ -128,8 +130,9 @@ function showOldEntries() {
         executors: resp.map(exec => ({
           ...exec,
           errorMessage: exec.errorMessage || '-',
-          isSuccessful: exec.isSuccessful ? 'Приключен успешно': 'Провален',
-          screenshotPaths: exec.screenshotPaths[0]
+          isSuccessful: exec.isSuccessful ? 'Приключен успешно' : 'Провален',
+          screenshotPaths: exec.screenshotPaths[0],
+          isPrimaryNum: exec.isPrimaryNum ? 'Да' : 'Не',
         })),
       });
     });
@@ -138,6 +141,8 @@ function showOldEntries() {
 const form = document.getElementById('submit-form');
 form.addEventListener('submit', handleForSubmission);
 // form.addEventListener("submit", clearFormAfterSubmission);
+const dummyForm = document.getElementById('submit-dummy-form');
+dummyForm.addEventListener('submit', handleForDummySubmission);
 
 function handleForSubmission(event) {
   event.preventDefault();
@@ -159,10 +164,27 @@ function handleForSubmission(event) {
   formData.append('purchaseDoc', entries.purchaseDoc); // File
   formData.append('powerAttorney', entries.powerAttorney); // File
   formData.append('startDay', entries.startDay);
+  const primaryNumCheckbox = document.getElementById('primaryNum');
+  if (primaryNumCheckbox.checked) {
+    formData.append('isPrimaryNum', 'true');
+  } else {
+    formData.append('isPrimaryNum', 'false');
+  }
+
+
 
   Http
     .post('/api/entries/add', formData)
     .then(data => displayFutureEntries());
+}
+
+function handleForDummySubmission(event) {
+  event.preventDefault();
+
+  Http
+    .get('/', {})
+    .then(data => {
+    });
 }
 
 function clearFormAfterSubmission() {

@@ -1,6 +1,6 @@
 import puppeteer, {Browser, Page} from 'puppeteer';
 import pathLib from 'path';
-import {handleStepFour, handleStepThree, handleStepOnePerson, handleStepOneCompany, handleStepTwo, handleStepFive, kepLogin, handleStepSix, finalStepSeven} from '@src/puppeteer/steps';
+import {handleStepFour, handleStepThree, handleStepOnePerson, handleStepOneCompany, handleStepTwo, handleStepFive, kepLogin, handleStepSix, finalStepSeven, handleLogoutFromSession} from '@src/puppeteer/steps';
 import {IEntry} from '@src/models/Entry';
 import {goToLink, RepresentativeValues} from '@src/common/misc';
 import ExecutorService from '@src/services/ExecutorService';
@@ -11,17 +11,20 @@ import EntryService from '@src/services/EntryService';
 export async function mainPuppeteer(entry: IEntry) {
   const entriesList: IEntry[] = [entry];
 
-  let hasNextChild = true;
-  let currentEntry = entry;
-  while (hasNextChild) {
-    const childEntry = await EntryService.getChildByParentId(currentEntry.id);
-    if (!childEntry) {
-      hasNextChild = false;
-      continue;
-    }
+  // Тази проверка ни трябва, за да не влизаме при тестово пускане на програмата.
+  if (entry.firstName !== 'test') {
+    let hasNextChild = true;
+    let currentEntry = entry;
+    while (hasNextChild) {
+      const childEntry = await EntryService.getChildByParentId(currentEntry.id);
+      if (!childEntry) {
+        hasNextChild = false;
+        continue;
+      }
 
-    entriesList.push(childEntry);
-    currentEntry = childEntry;
+      entriesList.push(childEntry);
+      currentEntry = childEntry;
+    }
   }
 
   // Run top lvl entry + child entries
@@ -33,6 +36,7 @@ export async function mainPuppeteer(entry: IEntry) {
       await executeEntry(entry1, isThereNextEntry, page);
       continue;
     }
+
     const pageFromExecution = await executeEntry(entry1, isThereNextEntry);
     if (pageFromExecution) {
       page = pageFromExecution;
@@ -91,6 +95,12 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
       await page.locator('#ARTICLE-CONTENT > div.alert.alert-info > button').click();
     }
 
+    // We need to stop the program if the data is fake.
+    if (entry.firstName === 'test') {
+      await handleLogoutFromSession(page);
+      return page;
+    }
+
     const startFillingData = Date.now();
 
     entry.representative === RepresentativeValues.PERSONAL
@@ -103,7 +113,18 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
 
     await handleStepFour(page, entry);
 
-    await handleStepFive(page, entry);
+    const response: boolean = await handleStepFive(page, entry);
+
+    if (!response) {
+      console.log(`Неуспешно намиране на номер, който не е основен - ${entry.regNumber}. Операцията беше прекратена и се преминава към следващ номер.`);
+      // Изчакване на разгловането да приключи
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Натискане на бутона Заявки услуга, който вече води към започването на процеса за следващ номер
+      await page.waitForSelector('#servicename > h1');
+      await page.locator('#ARTICLE-CONTENT > div:nth-child(1) > div.left-side > button').click();
+
+      return page;
+    }
 
     const startNumber = Date.now();
 
@@ -113,7 +134,7 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     const numberResult = ((endNumber - startNumber) / 1000).toFixed(2);
     console.log('Времето за запазване на номера отне: ', numberResult, 'секунди');
 
-    isThereNextEntry 
+    isThereNextEntry
       ? await finalStepSeven(page, entry, screenshotPaths)
       : await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 1500000});
 

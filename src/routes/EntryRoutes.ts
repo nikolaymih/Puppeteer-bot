@@ -19,9 +19,10 @@ async function add(req: IReq<IEntry>, res: IRes) {
   const purchaseDoc = (req as unknown as MulterRequest).files.purchaseDoc?.[0]?.filename ?? null;
   const powerAttorney = (req as unknown as MulterRequest).files.powerAttorney?.[0]?.filename ?? null;
   const issuedOn = entry?.issuedOn.replace(/-/g, '.');
+  const regexPattern = new RegExp('true');
+  const boolPrimaryNumValue = regexPattern.test(String(entry.isPrimaryNum));
 
-
-  const enrichedEntry: IEntry = {...entry, id, purchaseDoc, powerAttorney, issuedOn};
+  const enrichedEntry: IEntry = {...entry, id, purchaseDoc, powerAttorney, issuedOn, isPrimaryNum: boolPrimaryNumValue};
   const entries = await EntryService.addOne(enrichedEntry);
 
   // 1 mean top level entry. The first number to start for the day.

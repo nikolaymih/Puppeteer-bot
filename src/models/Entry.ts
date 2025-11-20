@@ -14,6 +14,7 @@ export interface IEntry {
   powerAttorney: string | null,
   parentEntryId: string,
   startDay?: string,
+  isPrimaryNum: boolean,
 }
 
 interface UploadedFile {
