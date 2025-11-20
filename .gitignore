@@ -1,5 +1,12 @@
-**/node_modules
-dist/
-src/screenshots
-src/files
-**/**/*.log
+node_modules/
+**/dist/
+
+# App-specific ignored folders
+src/screenshots/
+src/files/
+
+# Database JSON (adjust path if needed)
+src/repos/database.json
+
+# Log files
+*.log

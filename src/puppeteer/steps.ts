@@ -71,25 +71,25 @@ async function finalKepPart(wasThereAPreviousEntry: boolean) {
   await keyboard.type(Key.Enter);
 
   // Следните даннни ще бъдат подписани.
-  const result2 = await waitForWindowTitleMatch('', 2);
+  const result2 = await waitForWindowTitleMatch('Потвърдете данните за подписване', 2);
 
   if (!result2) throw new Error('Следните даннни ще бъдат подписани.');
   await keyboard.type(Key.Enter);
   await new Promise((resolve) => setTimeout(resolve, 50));
 
   // Вкарване на пин и натискане на enter
-  if (!wasThereAPreviousEntry) {
-    const result3 = await waitForWindowTitleMatch('Token Logon', 3);
-    if (!result3) throw new Error('Пин грешка на смарт карта.');
-    await keyboard.type(Key.Num9);
-    await keyboard.type(Key.Num9);
-    await keyboard.type(Key.Num9);
-    await keyboard.type(Key.Num9);
+  // if (!wasThereAPreviousEntry) {
+  const result3 = await waitForWindowTitleMatch('Избрано удостоверение за подписване', 3);
+  if (!result3) throw new Error('Следните даннни ще бъдат подписани.');
+  await keyboard.type(Key.Num9);
+  await keyboard.type(Key.Num9);
+  await keyboard.type(Key.Num9);
+  await keyboard.type(Key.Num9);
 
-    // Натисни Enter след записване на номер-а.
-    // await keyboard.type(Key.Enter);
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
+  // Натисни Enter след записване на номер-а.
+  await keyboard.type(Key.Enter);
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  // }
 }
 
 async function waitForSearchResult(page: Page, millisecondsToWait: number) {
