@@ -5,6 +5,7 @@ import {initiateScreenShot} from '@src/puppeteer/index';
 import keySender from 'node-key-sender';
 import {keyboard, Key} from '@nut-tree-fork/nut-js';
 import {windowManager} from 'node-window-manager';
+import { log } from 'console';
 
 async function sendKeysSequentially() {
   await keySender.sendKey('enter');
@@ -23,7 +24,7 @@ function getFirstBissWindowsFocused(expectedTitle: string) {
 
   for (const win of allWindows) {
     const title = win.getTitle();
-
+    console.log(win.getTitle(), expectedTitle, title.includes(expectedTitle))
     if (title.includes(expectedTitle)) {
       win.bringToTop(); // Focuses it
       break;
@@ -48,9 +49,16 @@ export async function waitForWindowTitleMatch(
 
     const win = windowManager.getActiveWindow();
 
-    if (win.getTitle().includes(expectedTitle) && step !== 2) {
+    if (win.getTitle().includes(expectedTitle) && step === 1) {
       result = true;
-    } else if ((win.getTitle() === '' && win.path !== '' && win.processId !== 0) && step === 2) {
+    }
+  
+    if (win.getTitle().includes(expectedTitle) && step === 3) {
+      console.log(win.getTitle(), expectedTitle)
+
+      result = true;
+    } else if (win.getTitle().includes(expectedTitle) && step === 2) {
+      console.log(win.getTitle(), expectedTitle)
       result = true;
     }
 
@@ -65,22 +73,21 @@ export async function waitForWindowTitleMatch(
 async function finalKepPart(wasThereAPreviousEntry: boolean) {
   // Изберете удостоверение
   const result1 = await waitForWindowTitleMatch('Моля, изберете удостоверение за електронно подписване', 1);
-  if (!result1) throw new Error('Неуспешно избиране на удостоверение за електронно подписване');
+  if (!result1) throw new Error('Неуспешно намиране на прозорец на удостоверение за електронно подписване(1)');
   await keyboard.type(Key.Down);
   await keyboard.type(Key.Down);
   await keyboard.type(Key.Enter);
 
   // Следните даннни ще бъдат подписани.
   const result2 = await waitForWindowTitleMatch('Потвърдете данните за подписване', 2);
-
-  if (!result2) throw new Error('Следните даннни ще бъдат подписани.');
+  if (!result2) throw new Error('Неуспешно намиране на прозорец за потвърдж данните за подписване(2)');
   await keyboard.type(Key.Enter);
   await new Promise((resolve) => setTimeout(resolve, 50));
 
   // Вкарване на пин и натискане на enter
   // if (!wasThereAPreviousEntry) {
   const result3 = await waitForWindowTitleMatch('Избрано удостоверение за подписване', 3);
-  if (!result3) throw new Error('Следните даннни ще бъдат подписани.');
+  if (!result3) throw new Error('Неуспешно избиране на удостоверение за подписване(3)');
   await keyboard.type(Key.Num9);
   await keyboard.type(Key.Num9);
   await keyboard.type(Key.Num9);
@@ -410,7 +417,7 @@ export async function finalStepSeven(page: Page, entry: IEntry, screenshotPath: 
   await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 300000});
   await page.locator('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button').click();
 
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   // Натискане на бутона Заявки услуга, който вече води към започването на процеса за следващ номер
   await page.waitForSelector('#servicename > h1');
   await page.locator('#ARTICLE-CONTENT > div:nth-child(1) > div.left-side > button').click();
