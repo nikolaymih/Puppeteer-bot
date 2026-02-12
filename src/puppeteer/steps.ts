@@ -11,7 +11,7 @@ async function sendKeysSequentially() {
   await keySender.sendKey('enter');
   await new Promise((resolve) => setTimeout(resolve, 150));
 
-  const keys = ['9', '9', '9', '9'];
+  const keys = ['1', '9', '0', '8'];
   await keySender.sendCombination(keys);
   await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -70,7 +70,7 @@ export async function waitForWindowTitleMatch(
   return result;
 }
 
-async function finalKepPart(wasThereAPreviousEntry: boolean) {
+async function finalKepPart() {
   // Изберете удостоверение
   const result1 = await waitForWindowTitleMatch('Моля, изберете удостоверение за електронно подписване', 1);
   if (!result1) throw new Error('Неуспешно намиране на прозорец на удостоверение за електронно подписване(1)');
@@ -107,7 +107,7 @@ async function waitForSearchResult(page: Page, millisecondsToWait: number) {
   const selector2 = 'body > div:nth-child(7) > div > div.modal.fade.show > div > div > div.modal-body > div:nth-child(3)';
 
   // Add a small delay to ensure DOM updates
-  await new Promise(resolve => setTimeout(resolve, 400));
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
   const foundSelector = await Promise.race([
     page.waitForSelector(selector1, {timeout: millisecondsToWait, visible: true})
@@ -344,18 +344,22 @@ export async function handleStepFive(page: Page, entry: IEntry): Promise<boolean
   let attempt = 0;
 
   while (result !== 'break' && result !== true) {
-    if (attempt > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    const errorSelector = 'div.modal.fade.show .alert.alert-warning';
+    const errorElement = await page.$(errorSelector);
+    console.log(errorElement);
+    // Тук идеята е че първият път имаме 2 позволени, 2 ни реже и после пак 2 позволени и вече на 6тия път да спираме.
+    if (errorElement && attempt > 5) {
+      await new Promise((resolve) => setTimeout(resolve, 18000));
     }
 
-    // Това е случай, когато работим с втория номер и той вече е взет, не искаме да чакаме повече от 5 секунд
-    if (attempt > 7 && !entry.isPrimaryNum) {
+    // Това е случай, когато работим с втория номер и той вече е взет, не искаме да чакаме повече или да ударим лимита от 3 удара.
+    if (attempt > 1 && !entry.isPrimaryNum) {
       result = 'logout';
       break;
     }
 
     // Тук чакаме 2 минути и половина - 500 * 200 = 125 000 милисекунди - 125 секунди
-    if (attempt > 250) {
+    if (attempt > 100) {
       result = 'break';
       break;
     }
@@ -392,7 +396,7 @@ export async function handleStepFive(page: Page, entry: IEntry): Promise<boolean
   return true;
 }
 
-export async function handleStepSix(page: Page, wasThereAPreviousEntry: boolean) {
+export async function handleStepSix(page: Page) {
   // Стъпка 6.
   await page.waitForSelector('.modal', {hidden: true});
   // Изчвакаме да се покаже текста Заявител, за да избегнем race condition с долния бутон, защото него го има и в пета стъпка.
@@ -407,10 +411,10 @@ export async function handleStepSix(page: Page, wasThereAPreviousEntry: boolean)
   await page.locator('#SIGN_FORM > div.card-body > div.interactive-container > div > div.row.align-items-center > div:nth-child(1) > button').click();
 
   // Финална част от кеп
-  await finalKepPart(wasThereAPreviousEntry);
+  await finalKepPart();
 }
 
-export async function finalStepSeven(page: Page, entry: IEntry, screenshotPath: string[]) {
+export async function finalStepSeven(page: Page) {
   // Стъпкa 7
   // Изчакване на процеса да потвърди регистрацията и при нужда преминаваме към следващия номер
   await page.waitForSelector('.modal', {hidden: true});

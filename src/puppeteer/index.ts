@@ -128,14 +128,14 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
 
     const startNumber = Date.now();
 
-    await handleStepSix(page, wasThereAPreviousEntry);
+    await handleStepSix(page);
 
     const endNumber = Date.now();
     const numberResult = ((endNumber - startNumber) / 1000).toFixed(2);
     console.log('Времето за запазване на номера отне: ', numberResult, 'секунди');
 
     isThereNextEntry
-      ? await finalStepSeven(page, entry, screenshotPaths)
+      ? await finalStepSeven(page)
       : await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 1500000});
 
     const end = Date.now();
