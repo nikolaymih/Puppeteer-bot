@@ -11,7 +11,7 @@ async function sendKeysSequentially() {
   await keySender.sendKey('enter');
   await new Promise((resolve) => setTimeout(resolve, 150));
 
-  const keys = ['1', '9', '0', '8'];
+  const keys = ['9', '9', '9', '9'];
   await keySender.sendCombination(keys);
   await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -186,6 +186,7 @@ export async function handleStepOnePerson(page: Page, entry: IEntry, screenshotP
 export async function handleStepOneCompany(page: Page, entry: IEntry, screenshotPath: string[]) {
   // Стъпка 1.
   // Натисни бутона юридическо лице
+  console.log('чакаме компанията')
   await page.locator('#ARTICLE-CONTENT > div > fieldset:nth-child(3) > div > div > div:nth-child(3) > input').click();
 
   // Попълни ЕИК на фирма

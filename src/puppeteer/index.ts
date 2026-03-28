@@ -1,12 +1,13 @@
-import puppeteer, {Browser, Page} from 'puppeteer';
+import puppeteer, { Browser, Page } from 'puppeteer';
 import pathLib from 'path';
-import {handleStepFour, handleStepThree, handleStepOnePerson, handleStepOneCompany, handleStepTwo, handleStepFive, kepLogin, handleStepSix, finalStepSeven, handleLogoutFromSession} from '@src/puppeteer/steps';
-import {IEntry} from '@src/models/Entry';
-import {goToLink, RepresentativeValues} from '@src/common/misc';
+import { handleStepFour, handleStepThree, handleStepOnePerson, handleStepOneCompany, handleStepTwo, handleStepFive, kepLogin, handleStepSix, finalStepSeven, handleLogoutFromSession } from '@src/puppeteer/steps';
+import { IEntry } from '@src/models/Entry';
+import { goToLink, RepresentativeValues } from '@src/common/misc';
 import ExecutorService from '@src/services/ExecutorService';
 import fs from 'fs-extra';
-import {windowManager} from 'node-window-manager';
+import { windowManager } from 'node-window-manager';
 import EntryService from '@src/services/EntryService';
+import { log } from 'console';
 
 export async function mainPuppeteer(entry: IEntry) {
   const entriesList: IEntry[] = [entry];
@@ -46,6 +47,39 @@ export async function mainPuppeteer(entry: IEntry) {
   }
 }
 
+async function clearAllTabsAndKeepOneBlank(browser: Browser) {
+  const existingPages = await browser.pages();
+
+  const blankPage = await browser.newPage();
+  await blankPage.goto('about:blank');
+
+  for (const p of existingPages) {
+    try {
+      await p.close();
+    } catch (e) {
+      console.log('Error closing old tab:', e.message);
+    }
+  }
+
+  return blankPage;
+}
+
+async function clickCookieIfPresent(page: Page) {
+  for (let i = 0; i < 5; i++) {
+    const cookieBtn = await page.$('#COOKIE_ACCEPT');
+    if (cookieBtn) {
+      console.log('има cookie банер, цъкаме го');
+      await cookieBtn.click();
+      return true;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  console.log('няма cookie банер');
+  return false;
+}
+
 async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Page): Promise<Page> {
   const screenshotPaths: string[] = [];
   let browser: Browser | undefined;
@@ -55,10 +89,15 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     browser = await puppeteer.launch({
       headless: false,
       defaultViewport: null,
+      userDataDir: 'C:/Users/offic/Puppeteer-bot/chrome-profile',
       args: [
         '--start-maximized',
+        '--hide-crash-restore-bubble',
+        '--disable-session-crashed-bubble',
       ],
     });
+
+    await clearAllTabsAndKeepOneBlank(browser);
 
     page = await browser.newPage();
     page.setDefaultTimeout(1500000);
@@ -88,11 +127,22 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
 
       await kepLogin(page);
 
-      await page.waitForSelector('#ARTICLE-CONTENT > div.alert.alert-info > button');
+      try {
+        const serviceButtonSelector = '#ARTICLE-CONTENT > div.alert.alert-info > button'; 2
+        const serviceBtn = await page.waitForSelector(serviceButtonSelector, { timeout: 2000 })
 
-      await page.locator('#COOKIE_ACCEPT').click();
+        if (serviceBtn) {
+          console.log('1');
+          await clickCookieIfPresent(page);
 
-      await page.locator('#ARTICLE-CONTENT > div.alert.alert-info > button').click();
+          await serviceBtn.click();
+        } else {
+          console.log('Service button screen is skipped, continue to next step');
+        }
+      } catch (e) {
+        console.log('2');
+        console.log('Service button screen is skipped, continue to next step');
+      }
     }
 
     // We need to stop the program if the data is fake.
@@ -102,6 +152,7 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     }
 
     const startFillingData = Date.now();
+    console.log('пълномощник');
 
     entry.representative === RepresentativeValues.PERSONAL
       ? await handleStepOnePerson(page, entry, screenshotPaths)
@@ -136,7 +187,7 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
 
     isThereNextEntry
       ? await finalStepSeven(page)
-      : await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 1500000});
+      : await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', { timeout: 1500000 });
 
     const end = Date.now();
     const result = ((end - start) / 1000).toFixed(2);
@@ -165,6 +216,7 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     return page;
 
   } catch (error) {
+    console.log(error);
     if (error instanceof Error) {
       await ExecutorService.createExecutor({
         id: entry.id,
@@ -183,7 +235,7 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
 
       // Изчакване на потребителя сам да завърши запазването на номера.
       // тук има проблем, ако долният не се получи и се чупи
-      await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', {timeout: 250000});
+      await page.waitForSelector('#ARTICLE-CONTENT > div.button-bar.button-bar--form.button-bar--responsive > div.left-side > button', { timeout: 250000 });
     }
     return page;
   }
@@ -195,7 +247,7 @@ export async function initiateScreenShot(page: Page, path: string, screenshotPat
   try {
     await fs.access(screenshotDir);
   } catch (e) {
-    await fs.mkdir(screenshotDir, {recursive: true});
+    await fs.mkdir(screenshotDir, { recursive: true });
     screenshotPath && screenshotPath.push(screenshotDir);
   }
 
