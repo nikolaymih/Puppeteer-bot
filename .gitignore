@@ -4,6 +4,7 @@ node_modules/
 # App-specific ignored folders
 src/screenshots/
 src/files/
+chrome-profile/
 
 # Database JSON (adjust path if needed)
 src/repos/database.json
