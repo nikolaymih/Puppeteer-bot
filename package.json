@@ -79,5 +79,11 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.5.3"
+  },
+  "allowScripts": {
+    "active-win@9.0.0": true,
+    "extract-file-icon@0.3.2": true,
+    "node-window-manager@2.2.4": true,
+    "puppeteer@24.40.0": true
   }
 }

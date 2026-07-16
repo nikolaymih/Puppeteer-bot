@@ -1,2 +1,2 @@
-Set-Location "C:\Users\offic\Puppeteer-bot"
+Set-Location $PSScriptRoot
 npm run dev

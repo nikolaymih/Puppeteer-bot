@@ -91,10 +91,10 @@ async function finalKepPart() {
   await keyboard.type(Key.Num9);
   await keyboard.type(Key.Num9);
   await keyboard.type(Key.Num9);
-  await keyboard.type(Key.Num9);
+  // await keyboard.type(Key.Num9);
 
-  // Натисни Enter след записване на номер-а.
-  await keyboard.type(Key.Enter);
+  // // Натисни Enter след записване на номер-а.
+  // await keyboard.type(Key.Enter);
   await new Promise((resolve) => setTimeout(resolve, 200));
   // }
 }

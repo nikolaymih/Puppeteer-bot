@@ -1,5 +1,6 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import pathLib from 'path';
+import os from 'os';
 import { handleStepFour, handleStepThree, handleStepOnePerson, handleStepOneCompany, handleStepTwo, handleStepFive, kepLogin, handleStepSix, finalStepSeven, handleLogoutFromSession } from '@src/puppeteer/steps';
 import { IEntry } from '@src/models/Entry';
 import { goToLink, RepresentativeValues } from '@src/common/misc';
@@ -89,7 +90,7 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     browser = await puppeteer.launch({
       headless: false,
       defaultViewport: null,
-      userDataDir: 'C:/Users/offic/Puppeteer-bot/chrome-profile',
+      userDataDir: pathLib.join(os.homedir(), 'Puppeteer-bot', 'chrome-profile'),
       args: [
         '--start-maximized',
         '--hide-crash-restore-bubble',
