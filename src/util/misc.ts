@@ -35,6 +35,5 @@ export function scheduleTask(dateString: string, taskFn: () => void): Job {
   // Schedule the task
   const job = schedule.scheduleJob(scheduledDate, taskFn);
 
-  console.log(`Task scheduled for: ${dateString}`);
   return job;
 }

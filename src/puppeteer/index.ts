@@ -57,8 +57,8 @@ async function clearAllTabsAndKeepOneBlank(browser: Browser) {
   for (const p of existingPages) {
     try {
       await p.close();
-    } catch (e) {
-      console.log('Error closing old tab:', e.message);
+    } catch {
+      // Старият таб може вече да е затворен - не е проблем.
     }
   }
 
@@ -69,7 +69,6 @@ async function clickCookieIfPresent(page: Page) {
   for (let i = 0; i < 5; i++) {
     const cookieBtn = await page.$('#COOKIE_ACCEPT');
     if (cookieBtn) {
-      console.log('има cookie банер, цъкаме го');
       await cookieBtn.click();
       return true;
     }
@@ -77,7 +76,6 @@ async function clickCookieIfPresent(page: Page) {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 
-  console.log('няма cookie банер');
   return false;
 }
 
@@ -95,6 +93,12 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
         '--start-maximized',
         '--hide-crash-restore-bubble',
         '--disable-session-crashed-bubble',
+        // Без тези флагове Chrome забавя JS таймерите на страницата, когато прозорецът
+        // е покрит (напр. от BISS при подписване) и лоудингът в стъпка 7 виси с минути.
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-features=IntensiveWakeUpThrottling,BatterySaverModeAvailable',
       ],
     });
 
@@ -129,20 +133,16 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
       await kepLogin(page);
 
       try {
-        const serviceButtonSelector = '#ARTICLE-CONTENT > div.alert.alert-info > button'; 2
+        const serviceButtonSelector = '#ARTICLE-CONTENT > div.alert.alert-info > button';
         const serviceBtn = await page.waitForSelector(serviceButtonSelector, { timeout: 2000 })
 
         if (serviceBtn) {
-          console.log('1');
           await clickCookieIfPresent(page);
 
           await serviceBtn.click();
-        } else {
-          console.log('Service button screen is skipped, continue to next step');
         }
-      } catch (e) {
-        console.log('2');
-        console.log('Service button screen is skipped, continue to next step');
+      } catch {
+        // Екранът с бутона за услугата липсва - продължаваме към следващата стъпка.
       }
     }
 
@@ -153,7 +153,6 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     }
 
     const startFillingData = Date.now();
-    console.log('пълномощник');
 
     entry.representative === RepresentativeValues.PERSONAL
       ? await handleStepOnePerson(page, entry, screenshotPaths)
@@ -168,7 +167,6 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     const response: boolean = await handleStepFive(page, entry);
 
     if (!response) {
-      console.log(`Неуспешно намиране на номер, който не е основен - ${entry.regNumber}. Операцията беше прекратена и се преминава към следващ номер.`);
       // Изчакване на разгловането да приключи
       await new Promise((resolve) => setTimeout(resolve, 500));
       // Натискане на бутона Заявки услуга, който вече води към започването на процеса за следващ номер
@@ -217,7 +215,6 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
     return page;
 
   } catch (error) {
-    console.log(error);
     if (error instanceof Error) {
       await ExecutorService.createExecutor({
         id: entry.id,
@@ -226,13 +223,6 @@ async function executeEntry(entry: IEntry, isThereNextEntry: boolean, page?: Pag
         isSuccessful: false,
         errorMessage: error.message,
       });
-
-      console.log(
-        'Неуспешно изпълнение на програмата. Програмата минава в ръчен режим за този номер: ',
-        entry.regNumber,
-        ' Моля проверете логовете на http://localhost:3000/users',
-        'error: ', error,
-      );
 
       // Изчакване на потребителя сам да завърши запазването на номера.
       // тук има проблем, ако долният не се получи и се чупи

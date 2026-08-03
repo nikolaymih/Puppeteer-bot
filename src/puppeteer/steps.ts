@@ -5,7 +5,6 @@ import {initiateScreenShot} from '@src/puppeteer/index';
 import keySender from 'node-key-sender';
 import {keyboard, Key} from '@nut-tree-fork/nut-js';
 import {windowManager} from 'node-window-manager';
-import { log } from 'console';
 
 async function sendKeysSequentially() {
   await keySender.sendKey('enter');
@@ -24,7 +23,6 @@ function getFirstBissWindowsFocused(expectedTitle: string) {
 
   for (const win of allWindows) {
     const title = win.getTitle();
-    console.log(win.getTitle(), expectedTitle, title.includes(expectedTitle))
     if (title.includes(expectedTitle)) {
       win.bringToTop(); // Focuses it
       break;
@@ -54,11 +52,9 @@ export async function waitForWindowTitleMatch(
     }
   
     if (win.getTitle().includes(expectedTitle) && step === 3) {
-      console.log(win.getTitle(), expectedTitle)
 
       result = true;
     } else if (win.getTitle().includes(expectedTitle) && step === 2) {
-      console.log(win.getTitle(), expectedTitle)
       result = true;
     }
 
@@ -91,10 +87,10 @@ async function finalKepPart() {
   await keyboard.type(Key.Num9);
   await keyboard.type(Key.Num9);
   await keyboard.type(Key.Num9);
-  // await keyboard.type(Key.Num9);
+  await keyboard.type(Key.Num9);
 
   // // Натисни Enter след записване на номер-а.
-  // await keyboard.type(Key.Enter);
+  await keyboard.type(Key.Enter);
   await new Promise((resolve) => setTimeout(resolve, 200));
   // }
 }
@@ -171,7 +167,6 @@ export async function handleStepOnePerson(page: Page, entry: IEntry, screenshotP
 
   // If not set correctly, try again
   if (dateValue !== entry.issuedOn) {
-    console.log(`Date field not filled correctly. Expected: ${entry.issuedOn}, Got: ${dateValue}`);
     // Try again or use alternative approach
     await page.locator('#applicant_recipientGroup\\.recipient\\.itemPersonBasicData\\.identityDocument\\.identitityIssueDate').fill(entry.issuedOn);
   }
@@ -186,7 +181,6 @@ export async function handleStepOnePerson(page: Page, entry: IEntry, screenshotP
 export async function handleStepOneCompany(page: Page, entry: IEntry, screenshotPath: string[]) {
   // Стъпка 1.
   // Натисни бутона юридическо лице
-  console.log('чакаме компанията')
   await page.locator('#ARTICLE-CONTENT > div > fieldset:nth-child(3) > div > div > div:nth-child(3) > input').click();
 
   // Попълни ЕИК на фирма
@@ -205,7 +199,7 @@ export async function handleStepOneCompany(page: Page, entry: IEntry, screenshot
       const input = document.querySelector('#applicant_recipientGroup\\.recipient\\.itemEntityBasicData\\.name') as HTMLInputElement;
       return input && input.value !== '';
     },
-    {timeout: 10000}, // default is 30 seconds
+    {timeout: 60000}, // default is 30 seconds
   );
 
   // Продължи към стъпка 3
@@ -347,7 +341,6 @@ export async function handleStepFive(page: Page, entry: IEntry): Promise<boolean
   while (result !== 'break' && result !== true) {
     const errorSelector = 'div.modal.fade.show .alert.alert-warning';
     const errorElement = await page.$(errorSelector);
-    console.log(errorElement);
     // Тук идеята е че първият път имаме 2 позволени, 2 ни реже и после пак 2 позволени и вече на 6тия път да спираме.
     if (errorElement && attempt > 5) {
       await new Promise((resolve) => setTimeout(resolve, 18000));
@@ -413,6 +406,10 @@ export async function handleStepSix(page: Page) {
 
   // Финална част от кеп
   await finalKepPart();
+
+  // Върни фокуса на Chrome след подписването, иначе табът остава "фонов"
+  // и Chrome забавя таймерите на страницата, докато чакаме потвърждението.
+  await page.bringToFront();
 }
 
 export async function finalStepSeven(page: Page) {
