@@ -175,7 +175,8 @@ export async function handleStepOnePerson(page: Page, entry: IEntry, screenshotP
   await initiateScreenShot(page, `${entry.id}/mvr-step1.jpeg`, screenshotPath);
 
   // Продължи към стъпка 3
-  await page.locator('#PAGE-NAV > nav > ul > li:nth-child(3) > div.nav-item-title > button').click();
+  // DOM click: не зависи от резолюция, скрол или припокриване (locator.click забиваше на един от лаптопите).
+  await page.$eval('#PAGE-NAV > nav > ul > li:nth-child(3) > div.nav-item-title > button', (el) => (el as HTMLElement).click());
 }
 
 export async function handleStepOneCompany(page: Page, entry: IEntry, screenshotPath: string[]) {
@@ -199,11 +200,12 @@ export async function handleStepOneCompany(page: Page, entry: IEntry, screenshot
       const input = document.querySelector('#applicant_recipientGroup\\.recipient\\.itemEntityBasicData\\.name') as HTMLInputElement;
       return input && input.value !== '';
     },
-    {timeout: 60000}, // default is 30 seconds
+    {timeout: 60000, polling: 200}, // polling по таймер: default 'raf' спира, ако прозорецът е закрит
   );
 
   // Продължи към стъпка 3
-  await page.locator('#PAGE-NAV > nav > ul > li:nth-child(3) > div.nav-item-title > button').click();
+  // DOM click: не зависи от резолюция, скрол или припокриване (locator.click забиваше на един от лаптопите).
+  await page.$eval('#PAGE-NAV > nav > ul > li:nth-child(3) > div.nav-item-title > button', (el) => (el as HTMLElement).click());
 }
 
 export async function handleStepTwo(page: Page, id: string) {
